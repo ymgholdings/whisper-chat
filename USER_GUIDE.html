@@ -1,0 +1,295 @@
+# How to Deploy WH15P3R on Lovable.dev
+
+## What You’ll Give to Lovable.dev
+
+You need to provide all the code files and a deployment prompt. Here’s exactly what to do:
+
+-----
+
+## Step 1: Gather All Files
+
+You need to save these artifacts as files:
+
+### File 1: `client/index.html`
+
+**Source:** The `secure_p2p_chat` artifact from our conversation  
+**What to do:** Copy the entire HTML content and save as `index.html`
+
+### File 2: `server/server.js`
+
+**Source:** The `signaling_server` artifact from our conversation  
+**What to do:** Copy the entire JavaScript content and save as `server.js`
+
+### File 3: `server/package.json`
+
+**Source:** The `package_json` artifact from our conversation  
+**What to do:** Copy the entire JSON content and save as `package.json`
+
+### File 4: `README.md`
+
+**Source:** The `lovable_package` artifact  
+**What to do:** Copy and save as `README.md`
+
+### File 5: `DEPLOYMENT.md`
+
+**Source:** The `deployment_guide` artifact  
+**What to do:** Copy and save as `DEPLOYMENT.md`
+
+### File 6: `SECURITY.md`
+
+**Source:** The `security_assessment` artifact  
+**What to do:** Copy and save as `SECURITY.md`
+
+### File 7: `USER_GUIDE.md`
+
+**Source:** The `user_security_guide` artifact  
+**What to do:** Copy and save as `USER_GUIDE.md`
+
+-----
+
+## Step 2: Create the Directory Structure
+
+```
+whisper-chat/
+├── README.md
+├── DEPLOYMENT.md
+├── SECURITY.md
+├── USER_GUIDE.md
+├── client/
+│   └── index.html
+└── server/
+    ├── server.js
+    └── package.json
+```
+
+-----
+
+## Step 3: Create a Zip File
+
+**On Windows:**
+
+1. Select all files and folders
+1. Right-click → “Send to” → “Compressed (zipped) folder”
+1. Name it `whisper-chat.zip`
+
+**On Mac:**
+
+1. Select all files and folders
+1. Right-click → “Compress Items”
+1. Rename to `whisper-chat.zip`
+
+**On Linux:**
+
+```bash
+zip -r whisper-chat.zip whisper-chat/
+```
+
+-----
+
+## Step 4: Upload to Lovable.dev
+
+1. Go to lovable.dev
+1. Create a new project
+1. Upload `whisper-chat.zip`
+
+-----
+
+## Step 5: Provide This Deployment Prompt
+
+Copy and paste this to Lovable.dev:
+
+```
+Deploy WH15P3R - a secure post-quantum encrypted P2P chat system.
+
+ARCHITECTURE:
+- Static HTML client (client/index.html) - needs HTTPS hosting
+- Node.js WebSocket server (server/) - needs port 3000 with WSS
+
+DEPLOYMENT REQUIREMENTS:
+
+1. CLIENT DEPLOYMENT:
+   - Deploy client/index.html as a static HTTPS site
+   - Deploy USER_GUIDE.md as USER_GUIDE.html (convert markdown to HTML or serve as-is)
+   - Must be served over HTTPS (required for WebRTC)
+   - No build process needed - single HTML file
+   - USER_GUIDE should be accessible at /USER_GUIDE.html
+   - Can be deployed to any static host
+
+2. SERVER DEPLOYMENT:
+   - Deploy server/ directory as Node.js application
+   - Run on port 3000 (configurable via PORT env var)
+   - Must support WebSocket connections (WSS in production)
+   - Install dependencies: npm install
+   - Start command: node server.js
+   - No database required - everything is in-memory/ephemeral
+
+3. POST-DEPLOYMENT CONFIGURATION:
+   - CRITICAL: Update the SIGNALING_SERVER constant in client/index.html
+   - Search for: const SIGNALING_SERVER = 'ws://localhost:3000';
+   - Change to: const SIGNALING_SERVER = 'wss://YOUR_DEPLOYED_SERVER_URL';
+   - Example: 'wss://whisper-server.lovable.app'
+   - This is in the JavaScript section, approximately 50-100 lines from the end of the file
+
+4. TESTING:
+   - Open client URL in two browser tabs
+   - Click "WH15P3R CHAT" in first tab
+   - Copy session code, paste in second tab
+   - Should connect with green border
+   - Test with Chrome 142+ for post-quantum encryption
+
+5. SECURITY NOTES:
+   - Server should have no logging of message content
+   - All data is ephemeral (no database)
+   - Client requires HTTPS, server requires WSS
+   - CORS must be enabled on server for cross-origin requests
+
+DEPLOYMENT OPTIONS:
+- Option A: Deploy both client and server on your platform
+- Option B: Deploy client only as static site (I'll host server separately on Vultr)
+
+Please deploy and provide:
+1. Client URL (the static site)
+2. Server WebSocket URL (for updating SIGNALING_SERVER)
+3. Any environment variables needed
+```
+
+-----
+
+## Step 6: After Deployment
+
+Lovable.dev will give you:
+
+1. **Client URL** - like `https://whisper-chat.lovable.app`
+1. **Server URL** - like `wss://whisper-server.lovable.app`
+
+You need to:
+
+1. Update the HTML file with the server URL
+1. Re-upload or redeploy with the updated URL
+1. Test the connection
+
+-----
+
+## Alternative: Two-Stage Deployment
+
+If Lovable.dev has issues with the WebSocket server, you can:
+
+### Stage 1: Deploy Client on Lovable.dev
+
+```
+Deploy only the client/index.html file as a static site.
+Just a simple static HTML file that needs HTTPS hosting.
+No build process, no dependencies.
+```
+
+### Stage 2: Deploy Server on Vultr (Manual)
+
+Use the deployment guide to set up the server on Vultr, then update the client with that server URL.
+
+-----
+
+## Troubleshooting Common Issues
+
+### Issue: WebSocket connection fails
+
+**Solution:** Make sure server URL uses `wss://` not `ws://`
+
+### Issue: “Not secure” browser warning
+
+**Solution:** Client must be served over HTTPS, not HTTP
+
+### Issue: Connection timeout
+
+**Solution:** Check firewall allows port 3000, verify server is running
+
+### Issue: “PQ NOT SUPPORTED” warning
+
+**Solution:** Use Chrome 142+ or Firefox 120+, or ignore (falls back to classical crypto)
+
+### Issue: Can’t connect between two users
+
+**Solution:**
+
+1. Check both users can access the client URL
+1. Verify server is running (check server logs)
+1. Make sure session code is copied exactly
+1. Try in incognito/private browsing mode
+
+-----
+
+## What to Expect
+
+**If successful, you’ll have:**
+
+- Public URL for the chat client (e.g., `https://your-app.lovable.app`)
+- Users can access this URL and start chatting
+- Post-quantum encrypted when using Chrome 142+
+- No data stored anywhere
+- Completely ephemeral sessions
+
+**This gives you:**
+
+- Professional deployment
+- HTTPS/WSS automatically configured
+- Easy updates (just re-upload zip)
+- No server management (Lovable handles it)
+
+-----
+
+## Cost Considerations
+
+**Lovable.dev:**
+
+- Check their pricing for hosting
+- Static client should be cheap/free
+- WebSocket server may have usage costs
+
+**Alternative (More Control):**
+
+- Client on GitHub Pages (free)
+- Server on Vultr Sweden ($6/month)
+- Total control over infrastructure
+- Better for high-security scenarios
+
+-----
+
+## Questions to Ask Lovable.dev
+
+Before deploying, confirm:
+
+1. “Can you host WebSocket servers (Node.js with `ws` library)?”
+1. “Do you provide HTTPS for static sites automatically?”
+1. “Can I update environment variables after deployment?”
+1. “What’s the URL format for deployed applications?”
+1. “Do you support custom domains?”
+
+-----
+
+## Next Steps After Deployment
+
+1. **Test thoroughly** with two devices
+1. **Update documentation** with your actual URLs
+1. **Share user guide** with intended users
+1. **Monitor** server health (check Lovable.dev dashboard)
+1. **Have backup plan** (document how to redeploy elsewhere if needed)
+
+-----
+
+## Final Notes
+
+**Advantages of Lovable.dev:**
+
+- Quick deployment (minutes, not hours)
+- Automatic HTTPS/WSS
+- No server management
+- Easy updates
+
+**Disadvantages:**
+
+- Less control over infrastructure
+- Potential vendor lock-in
+- May not be ideal for high-security scenarios (you don’t control the server)
+
+For maximum security and privacy, consider deploying the server yourself on Vultr (Sweden/Iceland) using the manual deployment guide, and only use Lovable.dev for the static client.
+
+Good luck with deployment!
