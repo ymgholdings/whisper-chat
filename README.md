@@ -1,409 +1,406 @@
-# WH15P3R Signaling Server
+# WH15P3R
 
-Ephemeral WebSocket signaling server for WH15P3R post-quantum encrypted P2P chat.
+Post-quantum encrypted peer-to-peer chat system with zero data storage.
 
-**Live URL:** `https://whisper-signaling-20.ymgholdings.deno.net`
-
------
-
-## Critical Security Properties
-
-### ⚠️ ZERO DATA PERSISTENCE
-
-**This server intentionally stores NOTHING:**
-
-- ❌ No database
-- ❌ No file writes
-- ❌ No logs of message content
-- ❌ No session history
-- ❌ No user data
-- ❌ No encryption keys
-
-**All data is ephemeral in-memory only:**
-
-- Session data exists only during active connections
-- Destroyed when connections close
-- Automatically cleaned up after 10 minutes of inactivity
-- Server restart = complete memory wipe
-
-### What This Server Does
-
-**Purpose:** Facilitate WebRTC peer-to-peer connection setup ONLY
-
-**Sees:**
-
-- Random session codes (e.g., “A3F7B9E2C1D4”)
-- WebSocket connection metadata
-- WebRTC signaling messages (SDP offer/answer/ICE candidates)
-
-**Does NOT See:**
-
-- Message content (transmitted P2P, not through server)
-- Encryption keys (generated client-side)
-- User identities (no authentication)
-- Chat history (no storage)
-
-**After P2P connection established:** Server is no longer involved in communication.
+**Live Demo:** [Coming Soon - Deploy Your Own]
 
 -----
 
-## Technical Implementation
+## Features
 
-**Runtime:** Deno Deploy (Serverless)  
-**Language:** JavaScript (Deno)  
-**Dependencies:** Zero (pure Deno standard library)
+- ✅ **Post-Quantum Encryption** - ML-KEM/Kyber hybrid (Chrome 142+, Firefox 120+)
+- ✅ **Direct P2P** - WebRTC data channels, no message relay
+- ✅ **Zero Storage** - No databases, no logs, completely ephemeral
+- ✅ **No Registration** - No accounts, phone numbers, or personal data
+- ✅ **Browser-Based** - No installation required
+- ✅ **Cross-Platform** - Works on desktop, mobile, all modern browsers
+- ✅ **Open Source** - Auditable code, transparent security
 
-**Architecture:**
+-----
 
-```
-Client A ──┐
-           ├──→ Signaling Server (WebSocket relay)
-Client B ──┘         ↓
-                Facilitates WebRTC handshake
-                     ↓
-Client A ←────────────────────────────────→ Client B
-              Direct P2P Connection
-         (Server no longer involved)
-```
+## Quick Start
 
-**Data Flow:**
+### For Users
 
-1. Clients connect via WebSocket (WSS)
-1. Exchange WebRTC signaling messages through server
-1. Establish direct P2P connection
-1. Server connection closes
-1. All server-side data destroyed
+1. **Visit the app** (once deployed)
+1. **Click “WH15P3R CHAT”** to generate a session code
+1. **Share code** with your contact via separate channel (phone, Signal, in-person)
+1. **Verify code out-of-band** when prompted
+1. **Chat securely** - Green border means quantum-resistant encryption active
+1. **Click “END”** when finished - all keys destroyed
+
+**For maximum security:** Use Tor Browser
 
 -----
 
 ## Deployment
 
-**Platform:** Deno Deploy (Serverless)  
-**Repository:** `ymgholdings/whisper-signaling`  
-**Entry Point:** `main.js`  
-**Hosting:** Automatic deployment from GitHub
+### Current Setup
 
-**Deployment Process:**
+**Signaling Server:**
 
-1. Push changes to GitHub `main` branch
-1. Deno Deploy automatically detects changes
-1. Builds and deploys in ~30 seconds
-1. Zero downtime updates
-1. Automatic rollback on errors
+- Platform: Deno Deploy (serverless)
+- Repository: [whisper-signaling](https://github.com/ymgholdings/whisper-signaling)
+- URL: `https://whisper-signaling-20.ymgholdings.deno.net`
+- Cost: FREE
 
-**Cost:** FREE (Deno Deploy free tier)
+**Client:**
 
------
+- Platform: GitHub Pages (or custom hosting)
+- Repository: This repo
+- Domain: WH15P3R.link (when configured)
+- Cost: FREE (plus domain registration)
 
-## Security Architecture
+### Deploy Your Own
 
-### Permissions (Minimal)
+#### 1. Deploy Signaling Server
 
-Deno Deploy runs with restricted permissions:
+**Option A: Use Our Server (Easiest)**
 
-```
-✅ Network access: Required for WebSocket server
-❌ File system read: DENIED
-❌ File system write: DENIED  
-❌ Environment variables: DENIED
-❌ Subprocess execution: DENIED
-```
+- Use existing: `wss://whisper-signaling-20.ymgholdings.deno.net`
+- No setup needed
 
-**This prevents:**
-
-- Writing logs to disk
-- Reading sensitive files
-- Running external processes
-- Accessing configuration secrets
-
-### Threat Model
-
-**This server protects against:**
-
-- ✅ Server seizure (nothing to seize)
-- ✅ Data breach (no data to breach)
-- ✅ Retroactive surveillance (nothing stored)
-- ✅ Legal data requests (nothing to provide)
-
-**This server does NOT protect against:**
-
-- ❌ Real-time network monitoring during handshake
-- ❌ Traffic analysis (timing, frequency patterns)
-- ❌ Compromised endpoints (client devices)
-- ❌ Man-in-the-middle attacks (mitigated by client-side verification)
-
-**Metadata visible to Deno Deploy:**
-
-- Connection timestamps
-- IP addresses (during WebSocket handshake)
-- Session codes (random strings with no semantic meaning)
-
-**Metadata NOT visible:**
-
-- Message content (end-to-end encrypted)
-- Encryption keys (never touch this server)
-- User identities (no authentication system)
-
------
-
-## API Endpoints
-
-### Health Check
-
-```
-GET /health
-```
-
-**Response:**
-
-```json
-{
-  "status": "ok",
-  "sessions": 0
-}
-```
-
-**Purpose:** Monitoring and uptime checks  
-**Sessions count:** Number of currently active signaling sessions (not total users)
-
-### WebSocket Endpoint
-
-```
-WSS /
-```
-
-**Protocol:** WebSocket Secure (WSS)  
-**Purpose:** WebRTC signaling relay  
-**Authentication:** None (by design)
-
-**Message Types:**
-
-- `join`: Client joining a session
-- `offer`: WebRTC offer (initiator → joiner)
-- `answer`: WebRTC answer (joiner → initiator)
-- `ice-candidate`: ICE candidate exchange (bidirectional)
-
------
-
-## Monitoring
-
-**Available Metrics:**
-
-- Active sessions count (via `/health`)
-- Request count (Deno Deploy dashboard)
-- Error rates (Deno Deploy dashboard)
-- Response times (Deno Deploy dashboard)
-
-**NOT Logged:**
-
-- Message content
-- Session codes
-- User identities
-- WebRTC signaling payload details
-
-**Monitoring Philosophy:** Track operational health, not user activity.
-
------
-
-## Privacy Guarantees
-
-### What Can Be Observed
-
-**By Deno Deploy (platform operator):**
-
-- Number of concurrent WebSocket connections
-- Connection timestamps
-- Aggregate request counts
-
-**By network observer:**
-
-- Encrypted WebSocket traffic (TLS 1.3)
-- Connection timing and frequency
-- Cannot see content (encrypted)
-
-### What CANNOT Be Observed
-
-**By anyone (including server operator):**
-
-- Message content (P2P encrypted)
-- Encryption keys (client-side only)
-- User identities (no authentication)
-- Chat history (no storage)
-- Message recipients (after P2P established)
-
------
-
-## Code Audit
-
-**Codebase Size:** ~100 lines of JavaScript  
-**Dependencies:** Zero external packages  
-**Complexity:** Minimal (by design)
-
-**Audit Recommendation:**  
-This code is simple enough to audit in 10-15 minutes. We encourage security researchers to review.
-
-**Security Principle:** Simple code = fewer vulnerabilities
-
------
-
-## Compliance
-
-**GDPR (General Data Protection Regulation):**
-
-- ✅ No personal data collected
-- ✅ No data retention (zero storage)
-- ✅ Right to erasure: N/A (nothing to erase)
-- ✅ Data portability: N/A (nothing to export)
-
-**Data Breach Notification:**
-
-- Not applicable (no data to breach)
-- Session codes are random strings with no value
-
-**Legal Requests:**
-
-- Cannot provide message content (not stored)
-- Cannot provide chat history (not stored)
-- Cannot provide encryption keys (never possessed)
-- Can only provide: Active session count and basic operational metrics
-
------
-
-## Disaster Recovery
-
-**Server Failure:**
-
-- Impact: Users cannot establish NEW connections
-- Users with EXISTING P2P connections: Unaffected (direct P2P)
-- Recovery: Automatic (Deno Deploy redundancy)
-- Data Loss: None (nothing stored)
-
-**Deployment Rollback:**
-
-- Automatic on critical errors
-- Manual rollback available via Deno Deploy dashboard
-- No data migration needed (stateless)
-
-**Backup Strategy:**
-
-- Not needed (no state to back up)
-- Configuration stored in GitHub (version controlled)
-
------
-
-## Performance
-
-**Expected Performance:**
-
-- Latency: <50ms (edge network)
-- Throughput: Thousands of concurrent sessions
-- Scaling: Automatic (serverless)
-- Geographic: Global edge deployment
-
-**Bottlenecks:**
-
-- WebSocket connection limits (handled by Deno Deploy)
-- Memory for active sessions (minimal footprint)
-
------
-
-## Operational Notes
-
-**Maintenance:** Zero ongoing maintenance required  
-**Updates:** Automatic via GitHub commits  
-**Monitoring:** Deno Deploy dashboard  
-**Alerts:** Configure via Deno Deploy (optional)  
-**Costs:** FREE (within generous limits)  
-**Scaling:** Automatic (no configuration needed)
-
------
-
-## Development
-
-**Local Testing:**
+**Option B: Deploy Your Own (Recommended for Privacy)**
 
 ```bash
-# Clone repository
-git clone https://github.com/ymgholdings/whisper-signaling.git
-cd whisper-signaling
-
-# Run locally
-deno run --allow-net main.js
-
-# Test
-curl http://localhost:8000/health
+# Fork whisper-signaling repo
+# Connect to Deno Deploy
+# Get your own serverless endpoint
+# Update client with your URL
 ```
 
-**Making Changes:**
+See [Signaling Server Repo](https://github.com/ymgholdings/whisper-signaling) for details.
 
-1. Edit `main.js`
-1. Test locally with Deno
-1. Commit to GitHub
-1. Deno Deploy auto-deploys
-1. Verify at production URL
+#### 2. Deploy Client
 
------
+**Via GitHub Pages (Free):**
 
-## Security Incident Response
+1. Fork this repository
+1. Update `index.html` line ~482 with your signaling server URL:
+   
+   ```javascript
+   const SIGNALING_SERVER = 'wss://your-server.deno.dev';
+   ```
+1. Go to Settings → Pages
+1. Source: Deploy from `main` branch
+1. Access at: `https://yourusername.github.io/whisper-chat/`
 
-**If Server Compromised:**
+**With Custom Domain:**
 
-**Attacker Gains:**
-
-- Active session codes (random strings, no semantic value)
-- Current connection count
-
-**Attacker Does NOT Gain:**
-
-- Message content (never touches server)
-- Encryption keys (client-side only)
-- User identities (no authentication system)
-- Historical data (nothing stored)
-
-**Impact:** Minimal (ephemeral design limits damage)
-
-**Response:**
-
-1. Redeploy from GitHub (clean deployment)
-1. Monitor for unusual patterns
-1. No user notification needed (no data compromised)
-1. Review Deno Deploy logs (if available)
-
-**No persistent data = minimal breach impact**
+1. Follow GitHub Pages setup above
+1. Add custom domain in GitHub Pages settings
+1. Update DNS records at your registrar
+1. Enable HTTPS (automatic via GitHub)
 
 -----
 
-## Related Projects
+## Architecture
 
-**Main Repository:** [whisper-chat](https://github.com/ymgholdings/whisper-chat)  
-**Documentation:** See main repository for user guides and security assessment  
-**Client Application:** Deployed separately (GitHub Pages or custom domain)
+```
+┌─────────────────────────────────────────────────┐
+│              Client (Browser)                   │
+│  • Post-quantum encryption (ML-KEM)            │
+│  • Session code generation                     │
+│  • WebRTC P2P connection                       │
+│  • User interface                              │
+└─────────────────────────────────────────────────┘
+                        │
+                        │ TLS 1.3 + ML-KEM
+                        ↓
+┌─────────────────────────────────────────────────┐
+│         Signaling Server (Deno Deploy)          │
+│  • WebRTC handshake coordination                │
+│  • No message content access                    │
+│  • Zero data storage                           │
+│  • Ephemeral sessions only                     │
+└─────────────────────────────────────────────────┘
+                        │
+                        │ WebRTC signaling
+                        ↓
+              P2P Connection Established
+                        ↓
+         ┌──────────────┴──────────────┐
+         │                             │
+    Client A ←─────────────────────→ Client B
+         DTLS 1.3 + ML-KEM (Direct P2P)
+         Post-Quantum Encrypted Messages
+         No Server Involvement
+```
 
 -----
 
-## Technical Support
+## Security
 
-**Platform Issues:** Contact Deno Deploy support  
-**Code Issues:** Open issue on GitHub repository  
-**Security Concerns:** Report responsibly via GitHub issues (private disclosure)
+### Cryptographic Stack
+
+**Layer 1: TLS 1.3 (Client ↔ Signaling Server)**
+
+- Algorithm: X25519MLKEM768 (hybrid classical + post-quantum)
+- Purpose: Protects session code exchange
+- Status: Active in Chrome 142+, Firefox 128+, Safari 17.2+
+
+**Layer 2: DTLS 1.3 (Peer-to-Peer)**
+
+- Algorithm: DTLS 1.3 + ML-KEM hybrid key agreement
+- Encryption: AES-256-GCM
+- Purpose: Encrypts actual chat messages
+- Status: Active in Chrome 142+, Edge 142+, Firefox 120+
+
+### What’s Protected
+
+✅ **Message Content** - End-to-end encrypted, quantum-resistant  
+✅ **Future-Proof** - Protected against future quantum computers  
+✅ **Server Seizure** - Nothing stored to seize  
+✅ **Retroactive Surveillance** - Keys destroyed after session  
+✅ **Data Breaches** - No data to breach
+
+### What’s NOT Protected
+
+❌ **Endpoint Security** - Cannot protect compromised devices  
+❌ **Metadata** - Connection timing/patterns visible (use Tor)  
+❌ **Physical Coercion** - No crypto protects against this  
+❌ **Screen Recording** - Messages visible on screen
+
+### Recommended Security Practices
+
+**For All Users:**
+
+- ✅ Use Chrome 142+ or Firefox 120+ for post-quantum encryption
+- ✅ Verify session codes out-of-band (phone call, in-person)
+- ✅ Close browser when finished (destroys keys)
+
+**For High-Risk Users:**
+
+- ✅ Access via Tor Browser (hides IP addresses)
+- ✅ Use Tails OS (leaves no traces on device)
+- ✅ Verify you see “🔒 Q POST-QUANTUM ACTIVE” badge
+- ✅ Meet in person for initial code exchange
+- ✅ Assume endpoints may be compromised
+
+See <USER_GUIDE.md> for complete security guidance.
 
 -----
 
-## License
+## Documentation
 
-Open source - use responsibly and ethically.
+- **<SECURITY.md>** - Complete security assessment and threat model
+- **<USER_GUIDE.md>** - User security guide for different threat levels
+- **<DEPLOYMENT.md>** - Detailed deployment instructions
+- **<ARCHITECTURE.md>** - Technical architecture overview
+
+-----
+
+## Browser Compatibility
+
+### Post-Quantum Encryption Support
+
+|Browser    |Version|PQ Status                       |
+|-----------|-------|--------------------------------|
+|Chrome     |142+   |✅ Full support (October 2025)   |
+|Edge       |142+   |✅ Full support (October 2025)   |
+|Firefox    |120+   |✅ Full support (November 2024)  |
+|Safari     |17.2+  |✅ TLS support (October 2025)    |
+|Tor Browser|Latest |✅ Based on Firefox (recommended)|
+
+**Fallback:** Older browsers use strong classical encryption (still secure against current threats, not quantum-resistant)
+
+-----
+
+## Cost Breakdown
+
+**Serverless Setup (Recommended):**
+
+- Signaling Server (Deno Deploy): **FREE**
+- Client Hosting (GitHub Pages): **FREE**
+- Domain (WH15P3R.link): **$12/year**
+- SSL Certificates: **FREE** (automatic)
+
+**Total: $12/year** (just domain cost)
+
+**Alternative with VPS Backup:**
+
+- Above setup + Vultr Sweden VPS: **$84/year**
+- Provides jurisdictional redundancy
+
+-----
+
+## Comparison to Other Systems
+
+|Feature                    |WH15P3R|Signal    |Session|Matrix    |
+|---------------------------|-------|----------|-------|----------|
+|**Post-Quantum (Deployed)**|✅ Yes  |⚠️ Planned |❌ No   |❌ No      |
+|**No Registration**        |✅ Yes  |❌ Phone#  |✅ Yes  |⚠️ Optional|
+|**Zero Storage**           |✅ Yes  |⚠️ Metadata|✅ Yes  |❌ No      |
+|**Browser-Based**          |✅ Yes  |⚠️ Web app |❌ No   |✅ Yes     |
+|**True P2P**               |✅ Yes  |❌ Server  |✅ Yes  |❌ Server  |
+|**No Installation**        |✅ Yes  |❌ App     |❌ App  |⚠️ Web     |
+
+**Unique Combination:** Only system with deployed PQ encryption + zero registration + truly ephemeral + browser-based + direct P2P.
+
+-----
+
+## Use Cases
+
+**✅ Appropriate For:**
+
+- Journalists communicating with sources
+- Business confidential communications
+- Privacy-conscious general users
+- Activists in partially-free countries
+- Anyone concerned about quantum future-proofing
+- Technical professionals needing quick secure chat
+
+**⚠️ Not Ideal For:**
+
+- High-risk dissidents under active surveillance (use Tails + Tor)
+- Users who need persistent chat history
+- Group communications (currently 1-on-1 only)
+- File transfers (text only currently)
+- Non-technical users in high-threat environments
+
+-----
+
+## Contributing
+
+**Security Issues:**
+
+- Report via GitHub Issues (private security advisory)
+- Email: [security contact if you add one]
+
+**Code Contributions:**
+
+- Fork repository
+- Create feature branch
+- Submit pull request
+- Follow existing code style
+
+**Documentation:**
+
+- Improvements welcome
+- Translations appreciated
+- User guides for different threat models
+
+-----
+
+## Threat Model
+
+### Protects Against
+
+✅ Network surveillance (ISP, government)  
+✅ Future quantum computer attacks  
+✅ Server compromise/seizure  
+✅ Retroactive data requests  
+✅ Man-in-the-middle (with out-of-band verification)
+
+### Does NOT Protect Against
+
+❌ Compromised endpoints (malware, keyloggers)  
+❌ Physical device access  
+❌ Coercion/torture  
+❌ State-level targeted surveillance (combine with physical security)  
+❌ Traffic analysis without Tor
+
+**Reality:** No encryption protects compromised endpoints. Use defense in depth.
+
+-----
+
+## Roadmap
+
+**Completed:**
+
+- ✅ Post-quantum encryption (ML-KEM)
+- ✅ WebRTC P2P connections
+- ✅ Ephemeral sessions (zero storage)
+- ✅ Browser-based (no installation)
+- ✅ Out-of-band verification prompts
+- ✅ User security guide
+- ✅ Serverless deployment
+
+**Potential Future:**
+
+- ⏳ Group chat support
+- ⏳ File transfer (encrypted)
+- ⏳ Voice/video calls
+- ⏳ Mobile app wrapper
+- ⏳ Tor hidden service (.onion)
+- ⏳ Independent security audit
+
+-----
+
+## Legal
+
+**Privacy:**
+
+- No data collection
+- No user tracking
+- No analytics
+- No cookies
+
+**GDPR Compliance:**
+
+- No personal data stored
+- No data retention
+- Nothing to erase or export
+
+**Liability:**
+
+- Provided as-is
+- No warranties
+- Users responsible for lawful use
+- Encryption tools are legal in most jurisdictions
+
+-----
+
+## FAQ
+
+**Q: Is this really quantum-resistant?**  
+A: Yes, when using Chrome 142+, Edge 142+, or Firefox 120+. Uses NIST-standardized ML-KEM (FIPS 203).
+
+**Q: Can the government read my messages?**  
+A: They cannot decrypt messages in transit (even with quantum computers). But they CAN compromise your endpoint device.
+
+**Q: Do I need to trust the server?**  
+A: Server only sees random session codes and connection metadata. Message content is end-to-end encrypted P2P.
+
+**Q: Why not just use Signal?**  
+A: Signal is excellent. WH15P3R offers: deployed post-quantum (not planned), no phone number, no metadata storage, truly ephemeral. Different use cases.
+
+**Q: Is this secure for journalists/activists?**  
+A: Yes, for medium-risk scenarios. Combine with Tor Browser and proper operational security. Read USER_GUIDE.md for your threat level.
+
+**Q: Can this be traced back to me?**  
+A: Use Tor Browser to hide your IP. The system stores nothing, but network traffic patterns are visible without Tor.
+
+**Q: What happens if I lose connection?**  
+A: Session ends, all keys destroyed. Start new session with new code.
 
 -----
 
 ## Acknowledgments
 
-- **Deno Team:** For serverless platform
-- **WebRTC Working Group:** For P2P standards
-- **NIST:** For post-quantum cryptography standards
+- **NIST** - Post-Quantum Cryptography Project
+- **WebRTC Working Group** - P2P standards
+- **Deno Team** - Serverless platform
+- **Browser Vendors** - Chrome, Firefox, Safari teams for PQ implementation
+- **Cryptography Community** - For ML-KEM development and analysis
+
+-----
+
+## License
+
+Open Source - Use Responsibly
+
+-----
+
+## Contact
+
+**Project Repository:** https://github.com/ymgholdings/whisper-chat  
+**Signaling Server:** https://github.com/ymgholdings/whisper-signaling  
+**Issues:** GitHub Issues  
+**Security:** Private security advisory on GitHub
 
 -----
 
 **Last Updated:** November 2025  
 **Version:** 1.0.0  
-**Status:** Production  
-**Uptime:** Monitor at `/health` endpoint
+**Status:** Production Ready
