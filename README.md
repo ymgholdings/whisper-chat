@@ -2,8 +2,6 @@
 
 Post-quantum encrypted peer-to-peer chat system with zero data storage.
 
-**Live Demo:** [Coming Soon - Deploy Your Own]
-
 -----
 
 ## Features
