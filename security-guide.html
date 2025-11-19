@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WH15P3R - Security Guide</title>
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000 !important;
+            background-color: #000 !important;
+            color: #c0c0c0;
+            font-family: 'Courier New', monospace;
+            line-height: 1.8;
+            padding: 0;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .header h1 {
+            color: #fff;
+            font-size: 36px;
+            letter-spacing: 8px;
+            margin-bottom: 15px;
+            font-weight: normal;
+        }
+        
+        .header .subtitle {
+            color: #4a9eff;
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 30px;
+            padding: 12px 24px;
+            border: 1px solid #4a9eff;
+            color: #4a9eff;
+            text-decoration: none;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+            font-size: 12px;
+        }
+        
+        .back-link:hover {
+            background: #4a9eff;
+            color: #000;
+        }
+        
+        h2 {
+            color: #fff;
+            font-size: 24px;
+            letter-spacing: 3px;
+            margin-top: 60px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #4a9eff;
+            font-weight: normal;
+        }
+        
+        h3 {
+            color: #00ff00;
+            font-size: 18px;
+            letter-spacing: 2px;
+            margin-top: 40px;
+            margin-bottom: 15px;
+            font-weight: normal;
+        }
+        
+        h4 {
+            color: #ffa500;
+            font-size: 16px;
+            margin-top: 30px;
+            margin-bottom: 12px;
+            font-weight: normal;
+        }
+        
+        p {
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        ul, ol {
+            margin-left: 40px;
+            margin-bottom: 25px;
+        }
+        
+        li {
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        
+        strong {
+            color: #fff;
+            font-weight: normal;
+            letter-spacing: 0.5px;
+        }
+        
+        code {
+            background: #1a1a1a;
+            padding: 3px 8px;
+            border: 1px solid #333;
+            color: #4a9eff;
+            font-size: 13px;
+        }
+        
+        pre {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 3px solid #4a9eff;
+        }
+        
+        pre code {
+            border: none;
+            padding: 0;
+            background: transparent;
+        }
+        
+        .alert {
+            padding: 20px 25px;
+            margin: 30px 0;
+            border-left: 4px solid;
+        }
+        
+        .alert-critical {
+            background: rgba(255, 0, 0, 0.1);
+            border-color: #ff0000;
+        }
+        
+        .alert-warning {
+            background: rgba(255, 165, 0, 0.1);
+            border-color: #ffa500;
+        }
+        
+        .alert-success {
+            background: rgba(0, 255, 0, 0.1);
+            border-color: #00ff00;
+        }
+        
+        .alert-info {
+            background: rgba(74, 158, 255, 0.1);
+            border-color: #4a9eff;
+        }
+        
+        .threat-level {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 10px 5px;
+            border: 1px solid;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+        
+        .threat-low { border-color: #00ff00; color: #00ff00; }
+        .threat-medium { border-color: #ffa500; color: #ffa500; }
+        .threat-high { border-color: #ff6600; color: #ff6600; }
+        .threat-extreme { border-color: #ff0000; color: #ff0000; }
+        
+        .security-indicator {
+            display: inline-block;
+            padding: 6px 12px;
+            margin: 5px;
+            font-size: 11px;
+            border: 1px solid;
+            letter-spacing: 1px;
+        }
+        
+        .indicator-good { border-color: #00ff00; color: #00ff00; }
+        .indicator-bad { border-color: #ff0000; color: #ff0000; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            font-size: 13px;
+        }
+        
+        th, td {
+            border: 1px solid #333;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        th {
+            background: #1a1a1a;
+            color: #fff;
+            font-weight: normal;
+            letter-spacing: 1px;
+        }
+        
+        .footer {
+            margin-top: 80px;
+            padding-top: 30px;
+            border-top: 1px solid #333;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 15px;
+            }
+            
+            .header h1 {
+                font-size: 28px;
+                letter-spacing: 4px;
+            }
+            
+            h2 {
+                font-size: 20px;
+            }
+            
+            h3 {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body style="background-color: #000;">
+    <div class="container">
+        <a href="index.html" class="back-link">← RETURN TO WH15P3R</a>
+
+        <div class="header">
+            <h1>WH15P3R</h1>
+            <div class="subtitle">User Security Guide</div>
+        </div>
+        
+        <div class="alert alert-info">
+            <strong>PURPOSE:</strong> This guide explains how to use WH15P3R securely based on your threat level. Not all users face the same risks. Choose the appropriate security measures for your situation.
+        </div>
+
+        <h2>UNDERSTANDING YOUR THREAT LEVEL</h2>
+        
+        <p>Select the security approach that matches your risk profile:</p>
+        
+        <div style="margin: 30px 0;">
+            <span class="threat-level threat-low">LOW RISK</span>
+            <span class="threat-level threat-medium">MEDIUM RISK</span>
+            <span class="threat-level threat-high">HIGH RISK</span>
+            <span class="threat-level threat-extreme">EXTREME RISK</span>
+        </div>
+
+        <h2>LEVEL 1: BASIC SECURITY</h2>
+        <div class="threat-level threat-low">LOW RISK</div>
+        
+        <h3>Who This Is For</h3>
+        <ul>
+            <li>Privacy-conscious individuals</li>
+            <li>Casual secure communications</li>
+            <li>Avoiding corporate surveillance</li>
+            <li>Basic confidentiality needs</li>
+        </ul>
+
+        <h3>Quick Start</h3>
+        <ol>
+            <li><strong>Use a modern browser:</strong> Chrome 142+, Edge 142+, or Firefox 120+</li>
+            <li><strong>Visit:</strong> <code>wh15p3r.link</code></li>
+            <li><strong>Look for:</strong> <span class="security-indicator indicator-good">🔒 POST-QUANTUM READY</span></li>
+            <li><strong>Click:</strong> "WH15P3R CHAT" to generate session code</li>
+            <li><strong>Share code</strong> with your contact via separate channel</li>
+            <li><strong>Verify:</strong> Green border = connection secure</li>
+            <li><strong>Check for:</strong> <span class="security-indicator indicator-good">🔒 Q POST-QUANTUM ACTIVE</span></li>
+            <li><strong>Chat safely:</strong> Messages are quantum-resistant encrypted</li>
+            <li><strong>End session:</strong> Click "END" when finished</li>
+        </ol>
+
+        <div class="alert alert-success">
+            <strong>✓ PROTECTED AGAINST:</strong><br>
+            • Commercial data harvesting<br>
+            • ISP surveillance<br>
+            • Network eavesdropping<br>
+            • Future quantum computers
+        </div>
+
+        <h2>LEVEL 2: ENHANCED SECURITY</h2>
+        <div class="threat-level threat-medium">MEDIUM RISK</div>
+        
+        <h3>Who This Is For</h3>
+        <ul>
+            <li>Journalists communicating with sources</li>
+            <li>Business professionals with confidential information</li>
+            <li>Activists in partially-free countries</li>
+            <li>Anyone facing moderate surveillance threats</li>
+        </ul>
+
+        <h3>Additional Requirements</h3>
+
+        <h4>Browser & Network Protection</h4>
+        <div class="alert alert-info">
+            <strong>RECOMMENDED:</strong> Use Tor Browser for maximum privacy<br>
+            <strong>Download:</strong> <code>torproject.org</code><br>
+            <strong>Benefit:</strong> Hides your IP address from both server and chat partner
+        </div>
+
+        <p><strong>Alternative:</strong> Use VPN (ProtonVPN, Mullvad, IVPN)</p>
+        <ul>
+            <li>Connect to VPN before accessing WH15P3R</li>
+            <li>Choose privacy-focused providers</li>
+            <li>Avoid free VPN services</li>
+        </ul>
+
+        <h4>Session Code Verification (CRITICAL)</h4>
+        <p>When the system prompts you to verify:</p>
+
+        <pre><code>SECURITY CHECK: Did you verify the session code out-of-band?
+
+For maximum security, you should have:
+• Called your contact on a separate phone
+• Verbally confirmed the session code matches
+• Or exchanged codes in person</code></pre>
+
+        <p><strong>Why this matters:</strong> Prevents man-in-the-middle attacks</p>
+
+        <p><strong>Safe verification methods:</strong></p>
+        <ol>
+            <li><strong>Phone call on different device:</strong> Read code aloud, confirm it matches</li>
+            <li><strong>In-person exchange:</strong> Show codes on screens, verify they match</li>
+            <li><strong>Existing secure channel:</strong> If you already use Signal securely, that works</li>
+        </ol>
+
+        <div class="alert alert-warning">
+            <strong>⚠ NEVER share session codes via:</strong><br>
+            • SMS (not encrypted)<br>
+            • Email (stored on servers)<br>
+            • Social media (monitored)<br>
+            • Insecure messaging apps
+        </div>
+
+        <h4>Operational Security</h4>
+        <ul>
+            <li><strong>Access location:</strong> Avoid using from home/work if possible</li>
+            <li><strong>Device security:</strong> Ensure device is clean, updated, trusted</li>
+            <li><strong>Message discipline:</strong> Keep messages brief, avoid unnecessary details</li>
+            <li><strong>Session hygiene:</strong> End sessions immediately when finished</li>
+            <li><strong>Browser cleanup:</strong> Close browser completely after session</li>
+        </ul>
+
+        <div class="alert alert-success">
+            <strong>✓ ADDITIONALLY PROTECTED AGAINST:</strong><br>
+            • Targeted surveillance (moderate)<br>
+            • Man-in-the-middle attacks (with verification)<br>
+            • IP address correlation (with Tor/VPN)<br>
+            • Metadata analysis (reduced)
+        </div>
+
+        <h2>LEVEL 3: HIGH SECURITY</h2>
+        <div class="threat-level threat-high">HIGH RISK</div>
+        
+        <h3>Who This Is For</h3>
+        <ul>
+            <li>Individuals in authoritarian countries</li>
+            <li>Whistleblowers with sensitive information</li>
+            <li>Human rights activists facing real threats</li>
+            <li>Anyone under active government surveillance</li>
+        </ul>
+
+        <div class="alert alert-critical">
+            <strong>CRITICAL:</strong> At this threat level, digital security alone is insufficient. You must combine cryptographic protection with rigorous operational security and physical security measures.
+        </div>
+
+        <h3>Operating System Requirements</h3>
+
+        <h4>OPTION 1: Tails OS (Recommended for Desktop)</h4>
+        <pre><code>Tails = The Amnesic Incognito Live System
+
+Characteristics:
+• Boots from USB drive
+• Runs entirely in RAM
+• Leaves no traces on computer
+• Includes Tor Browser pre-configured
+• All data destroyed on shutdown
+
+Download: tails.boum.org
+IMPORTANT: Verify cryptographic signature</code></pre>
+
+        <p><strong>Usage:</strong></p>
+        <ol>
+            <li>Download Tails and verify signature</li>
+            <li>Create bootable USB drive</li>
+            <li>Boot computer from USB (nothing on hard drive)</li>
+            <li>Access WH15P3R through built-in Tor Browser</li>
+            <li>Shut down = all traces erased</li>
+        </ol>
+
+        <h4>OPTION 2: GrapheneOS (Mobile)</h4>
+        <ul>
+            <li>Hardened Android OS for Pixel phones</li>
+            <li>Enhanced privacy and security features</li>
+            <li>Regular security updates</li>
+            <li>Install from: <code>grapheneos.org</code></li>
+            <li>Use with hardened browser or Tor Browser (Android)</li>
+        </ul>
+
+        <h3>Access Location Protocol</h3>
+
+        <div class="alert alert-critical">
+            <strong>NEVER access from:</strong><br>
+            • Your home<br>
+            • Your workplace<br>
+            • Regular locations<br>
+            • Anywhere with cameras showing your face<br>
+            • Same location twice
+        </div>
+
+        <p><strong>ALWAYS access from:</strong></p>
+        <ul>
+            <li>Random public WiFi (libraries, cafes, airports)</li>
+            <li>Different location every time</li>
+            <li>High-traffic areas with many people</li>
+            <li>Locations you've never been to before</li>
+            <li>Vary timing and neighborhood</li>
+        </ul>
+
+        <h3>Session Code Exchange (High Security)</h3>
+
+        <h4>BEST PRACTICE: In-Person Verification</h4>
+        <ol>
+            <li>Arrange meeting at random public location</li>
+            <li>Use counter-surveillance awareness</li>
+            <li>Exchange codes face-to-face</li>
+            <li>Verify codes match exactly</li>
+            <li>Memorize if possible, destroy paper immediately</li>
+            <li>Leave separately by different routes</li>
+            <li>Wait 2-6 hours before connecting</li>
+            <li>Connect from completely different locations</li>
+        </ol>
+
+        <h4>ACCEPTABLE: Burner Phone Voice Call</h4>
+        <ul>
+            <li>Use burner phone purchased with cash</li>
+            <li>Remove battery between uses</li>
+            <li>Call from public location</li>
+            <li>Read code using phonetic alphabet</li>
+            <li>Destroy SIM after single use</li>
+            <li>Never reuse burner for same contact</li>
+        </ul>
+
+        <h3>During High-Risk Session</h3>
+        <ul>
+            <li><strong>Trust nothing:</strong> Even verified connections could be compromised</li>
+            <li><strong>Use code words:</strong> Pre-arranged terms for sensitive topics</li>
+            <li><strong>Have duress signals:</strong> Agreed phrases indicating coercion</li>
+            <li><strong>Limit exposure:</strong> Keep sessions brief</li>
+            <li><strong>Use for coordination only:</strong> Discuss sensitive details in person</li>
+            <li><strong>Time-delayed responses:</strong> Avoid instant replies (breaks patterns)</li>
+        </ul>
+
+        <h3>After High-Risk Session</h3>
+        <ol>
+            <li>End session immediately</li>
+            <li>Shut down Tails or close Tor Browser</li>
+            <li>Leave location immediately via different route</li>
+            <li>Vary all patterns for next session</li>
+            <li>Practice counter-surveillance awareness</li>
+            <li>Never discuss chat with anyone except contact</li>
+        </ol>
+
+        <h2>LEVEL 4: MAXIMUM SECURITY</h2>
+        <div class="threat-level threat-extreme">EXTREME RISK</div>
+        
+        <h3>Reality Check</h3>
+
+        <div class="alert alert-critical">
+            <strong>IF YOU ARE SPECIFICALLY TARGETED BY A WELL-RESOURCED INTELLIGENCE AGENCY:</strong><br><br>
+            No digital communication system—including WH15P3R—can provide complete protection. Adversaries with unlimited resources can:<br><br>
+            • Deploy zero-day exploits against any browser<br>
+            • Compromise devices via supply chain interdiction<br>
+            • Install hardware-level implants<br>
+            • Conduct comprehensive physical surveillance<br>
+            • Use legal coercion or violence
+        </div>
+
+        <h3>If You Must Communicate Digitally</h3>
+
+        <h4>Hardware Security</h4>
+        <ul>
+            <li><strong>Use air-gapped devices</strong> for sensitive work (never connected to internet)</li>
+            <li><strong>Disposable devices:</strong> Burner laptops purchased with cash, used once</li>
+            <li><strong>Hardware verification:</strong> Inspect for tampering</li>
+            <li><strong>Faraday bags:</strong> Store devices in RF-blocking bags when not in use</li>
+        </ul>
+
+        <h4>Communication Strategy</h4>
+        <pre><code>PRIMARY RULE: Use WH15P3R for meeting coordination only.
+              Discuss actual sensitive topics in person.</code></pre>
+
+        <ul>
+            <li><strong>Digital = coordination:</strong> Times, places (in code)</li>
+            <li><strong>Physical = sensitive info:</strong> Meet in person for details</li>
+            <li><strong>Time delays:</strong> Long gaps between digital contact and physical meeting</li>
+            <li><strong>Dead drops:</strong> Physical information exchange</li>
+            <li><strong>Compartmentalization:</strong> Different devices for different contacts</li>
+        </ul>
+
+        <h4>Physical Security (Primary Defense)</h4>
+        <ul>
+            <li>Counter-surveillance techniques</li>
+            <li>Random meeting locations</li>
+            <li>Outdoor spaces (harder to bug)</li>
+            <li>Multiple exit routes planned</li>
+            <li>Trusted network for support</li>
+            <li>Emergency destruction procedures</li>
+            <li>Legal representation arranged beforehand</li>
+        </ul>
+
+        <h3>Operational Security Principles</h3>
+        <ol>
+            <li><strong>Assume compromise:</strong> Always assume devices may be compromised</li>
+            <li><strong>Defense in depth:</strong> Multiple overlapping security layers</li>
+            <li><strong>Trust minimization:</strong> Trust no one completely</li>
+            <li><strong>Pattern avoidance:</strong> Never establish predictable routines</li>
+            <li><strong>Plausible deniability:</strong> Have cover stories prepared</li>
+            <li><strong>Exit strategy:</strong> Know when to stop and how to disappear</li>
+        </ol>
+
+        <h2>BROWSER COMPATIBILITY</h2>
+
+        <h3>Post-Quantum Encryption Support</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Browser</th>
+                    <th>Version Required</th>
+                    <th>PQ Status</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Chrome</td>
+                    <td>142+</td>
+                    <td><span class="indicator-good">✓ FULL SUPPORT</span></td>
+                    <td>October 2025</td>
+                </tr>
+                <tr>
+                    <td>Edge</td>
+                    <td>142+</td>
+                    <td><span class="indicator-good">✓ FULL SUPPORT</span></td>
+                    <td>October 2025</td>
+                </tr>
+                <tr>
+                    <td>Firefox</td>
+                    <td>120+</td>
+                    <td><span class="indicator-good">✓ FULL SUPPORT</span></td>
+                    <td>November 2024</td>
+                </tr>
+                <tr>
+                    <td>Tor Browser</td>
+                    <td>Latest</td>
+                    <td><span class="indicator-good">✓ RECOMMENDED</span></td>
+                    <td>Based on Firefox</td>
+                </tr>
+                <tr>
+                    <td>Safari</td>
+                    <td>17.2+</td>
+                    <td><span class="indicator-good">✓ TLS SUPPORT</span></td>
+                    <td>October 2025</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p><strong>Fallback:</strong> Older browsers use strong classical encryption (secure against current threats, not quantum-resistant)</p>
+
+        <h2>WHAT IS PROTECTED</h2>
+
+        <div class="alert alert-success">
+            <strong>✓ MESSAGE CONTENT</strong><br>
+            • End-to-end encrypted with post-quantum algorithms<br>
+            • Protected against future quantum computers<br>
+            • Cannot be decrypted by anyone (including us)<br>
+            • Remains secure even if traffic is recorded today
+        </div>
+
+        <div class="alert alert-success">
+            <strong>✓ NO DATA STORAGE</strong><br>
+            • No messages stored on any server<br>
+            • No chat history saved<br>
+            • No user accounts or registration data<br>
+            • Server cannot be seized for your data (there is none)
+        </div>
+
+        <div class="alert alert-success">
+            <strong>✓ EPHEMERAL SESSIONS</strong><br>
+            • Encryption keys exist only during active session<br>
+            • Keys destroyed when session ends<br>
+            • Keys never stored or transmitted to servers<br>
+            • Cannot be reconstructed after session
+        </div>
+
+        <h2>WHAT IS NOT PROTECTED</h2>
+
+        <div class="alert alert-critical">
+            <strong>✗ ENDPOINT SECURITY</strong><br>
+            <strong>CRITICAL LIMITATION:</strong> No encryption can protect compromised devices.<br><br>
+            If malware, keyloggers, or screen capture software is on your device:<br>
+            • Messages are visible before encryption<br>
+            • Messages are visible after decryption<br>
+            • Keystrokes can be captured<br>
+            • Screen content can be recorded<br><br>
+            <strong>MITIGATION:</strong> Use only trusted devices, Tails OS, regular security audits
+        </div>
+
+        <div class="alert alert-warning">
+            <strong>⚠ METADATA LEAKAGE</strong><br>
+            Even with perfect encryption, these are visible:<br>
+            • IP addresses (unless using Tor)<br>
+            • Connection times and duration<br>
+            • Message frequency and sizes<br>
+            • Communication patterns<br><br>
+            <strong>MITIGATION:</strong> Use Tor Browser, vary patterns, access from different locations
+        </div>
+
+        <div class="alert alert-warning">
+            <strong>⚠ PHYSICAL ATTACKS</strong><br>
+            No cryptography protects against:<br>
+            • Physical device seizure<br>
+            • Coercion or torture<br>
+            • Legally compelled disclosure<br>
+            • "Rubber hose cryptanalysis"<br><br>
+            <strong>MITIGATION:</strong> Physical security, legal preparation, secure deletion, plausible deniability
+        </div>
+
+        <h2>SECURITY VERIFICATION</h2>
+
+        <h3>Visual Indicators</h3>
+
+        <p><strong>Before connecting, look for:</strong></p>
+        <div class="security-indicator indicator-good">🔒 POST-QUANTUM READY</div>
+        <p>Your browser supports quantum-resistant encryption</p>
+
+        <p><strong>After connecting, look for:</strong></p>
+        <div class="security-indicator indicator-good">🔒 Q POST-QUANTUM ACTIVE</div>
+        <p>Connection is using ML-KEM encryption + green glowing border</p>
+
+        <h3>Technical Verification (Advanced)</h3>
+
+        <p><strong>Open browser developer console (F12):</strong></p>
+        <pre><code>✓ Post-Quantum Encryption Active
+
+DTLS Version: DTLS 1.3
+Cipher Suite: [contains MLKEM or Kyber]</code></pre>
+
+        <h2>EMERGENCY PROCEDURES</h2>
+
+        <h3>If You Suspect Device Compromise</h3>
+        <ol>
+            <li><strong>Immediately:</strong> End session, close browser, power off device</li>
+            <li><strong>Do not turn on again</strong> until device can be examined</li>
+            <li><strong>If high-risk:</strong> Destroy device and SIM card</li>
+            <li><strong>Use different device</strong> for future communications</li>
+            <li><strong>Change all patterns:</strong> Timing, locations, contacts</li>
+        </ol>
+
+        <h3>If Arrested or Detained</h3>
+
+        <div class="alert alert-critical">
+            <strong>REMEMBER:</strong><br>
+            • Remain silent beyond identifying yourself<br>
+            • Request lawyer immediately and repeatedly<br>
+            • Do not consent to device searches<br>
+            • Do not provide passwords or unlock devices<br>
+            • Do not explain encryption to authorities<br>
+            • Do not try to convince them of innocence
+        </div>
+
+        <h2>FREQUENTLY ASKED QUESTIONS</h2>
+
+        <h4>Q: Is this really quantum-resistant?</h4>
+        <p><strong>A:</strong> Yes, when using Chrome 142+, Edge 142+, or Firefox 120+. Uses NIST-standardized ML-KEM (FIPS 203) which is designed to resist attacks from quantum computers.</p>
+
+        <h4>Q: Can the government read my messages?</h4>
+        <p><strong>A:</strong> They cannot decrypt messages in transit, even with quantum computers. However, they CAN read messages if your device is compromised before encryption or after decryption.</p>
+
+        <h4>Q: Why do I need out-of-band verification?</h4>
+        <p><strong>A:</strong> To prevent man-in-the-middle attacks. An attacker could intercept your session code and pose as your contact. Verifying via phone call or in-person ensures you're really talking to who you think you are.</p>
+
+        <h4>Q: What if I can't use Tor Browser?</h4>
+        <p><strong>A:</strong> Use a reputable VPN service. This hides your IP address from the signaling server, though not as effectively as Tor. For high-risk situations, Tor is strongly recommended.</p>
+
+        <h4>Q: How do I know there's no backdoor?</h4>
+        <p><strong>A:</strong> The code is open source and can be audited. We use standard browser cryptography (not custom implementations), which is maintained and audited by browser vendors. Transparency is our security model.</p>
+
+        <h4>Q: What happens if I lose connection?</h4>
+        <p><strong>A:</strong> Session ends and all encryption keys are destroyed. You'll need to start a new session with a new code.</p>
+
+        <h2>FINAL GUIDANCE</h2>
+
+        <div class="alert alert-info">
+            <strong>DEFENSE IN DEPTH</strong><br><br>
+            Layer your security:<br>
+            1. Secure hardware (Tails, trusted devices)<br>
+            2. Secure network (Tor, VPN)<br>
+            3. Secure communication (WH15P3R)<br>
+            4. Secure behavior (OpSec, tradecraft)<br>
+            5. Physical security (location, awareness)<br>
+            6. Legal protection (know rights, have lawyer)<br><br>
+            No single layer is sufficient. Use them all.
+        </div>
+
+        <h3>Trust Your Instincts</h3>
+        <p>If something feels wrong:</p>
+        <ul>
+            <li><strong>STOP</strong></li>
+            <li><strong>ASSESS</strong></li>
+            <li><strong>CHANGE APPROACH</strong></li>
+        </ul>
+        <p>Better to be paranoid and safe than trusting and caught.</p>
+
+        <h3>This is a Tool, Not a Shield</h3>
+        <p>WH15P3R provides strong cryptographic protection. It does NOT make you invincible. Use wisely, understand limitations, combine with other security measures, and always prioritize your physical safety.</p>
+
+        <div class="alert alert-success" style="text-align: center; font-size: 16px; margin-top: 50px;">
+            <strong>STAY SAFE • TRUST CAREFULLY • VERIFY EVERYTHING</strong>
+        </div>
+
+        <div class="footer">
+            <p><strong>Document Version:</strong> 2.0 (Post-Quantum Edition)</p>
+            <p><strong>Last Updated:</strong> November 2025</p>
+            <p><strong>For technical details, see:</strong> SECURITY.md in project repository</p>
+            <br>
+            <p style="font-style: italic; margin-top: 20px;">
+                "The goal is not perfect security—that's impossible. The goal is to make surveillance expensive enough that you're not worth the effort."
+            </p>
+        </div>
+    </div>
+</body>
+</html>
