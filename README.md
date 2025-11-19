@@ -49,8 +49,6 @@ Post-quantum encrypted peer-to-peer chat system with zero data storage.
 - Domain: WH15P3R.link (when configured)
 - Cost: FREE (plus domain registration)
 
-### Deploy Your Own
-
 #### 1. Deploy Signaling Server
 
 **Option A: Use Our Server (Easiest)**
@@ -71,7 +69,7 @@ See [Signaling Server Repo](https://github.com/ymgholdings/whisper-signaling) fo
 
 #### 2. Deploy Client
 
-**Via GitHub Pages (Free):**
+**Via GitHub Pages:**
 
 1. Fork this repository
 1. Update `index.html` line ~482 with your signaling server URL:
@@ -81,7 +79,7 @@ See [Signaling Server Repo](https://github.com/ymgholdings/whisper-signaling) fo
    ```
 1. Go to Settings → Pages
 1. Source: Deploy from `main` branch
-1. Access at: `https://yourusername.github.io/whisper-chat/`
+1. Access at: `https://ymgholdings.github.io/whisper-chat/`
 
 **With Custom Domain:**
 
