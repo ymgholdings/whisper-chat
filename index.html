@@ -348,6 +348,158 @@
             width: 100%;
         }
     }
+
+    .mode-selector {
+        margin: 25px 0;
+        text-align: center;
+    }
+
+    .mode-selector label {
+        display: block;
+        font-size: 11px;
+        margin-bottom: 15px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #666;
+    }
+
+    .mode-options {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .mode-option {
+        background: #000;
+        border: 2px solid #333;
+        color: #c0c0c0;
+        padding: 15px 25px;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        cursor: pointer;
+        letter-spacing: 2px;
+        transition: all 0.3s;
+        min-width: 150px;
+    }
+
+    .mode-option:hover {
+        border-color: #4a9eff;
+    }
+
+    .mode-option.selected {
+        border-color: #00ff00;
+        color: #00ff00;
+        box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+    }
+
+    .video-container {
+        display: none;
+        margin: 20px 0;
+        gap: 15px;
+    }
+
+    .video-container.active {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .video-box {
+        position: relative;
+        border: 2px solid #333;
+        background: #000;
+        overflow: hidden;
+    }
+
+    .video-box.local {
+        width: 320px;
+        height: 240px;
+    }
+
+    .video-box.remote {
+        width: 640px;
+        height: 480px;
+        border-color: #00ff00;
+        box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+    }
+
+    .video-box video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .video-box audio {
+        display: none;
+    }
+
+    .video-label {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #c0c0c0;
+        padding: 5px 10px;
+        font-size: 10px;
+        letter-spacing: 1px;
+        border: 1px solid #333;
+    }
+
+    .media-controls {
+        display: none;
+        gap: 10px;
+        justify-content: center;
+        margin: 15px 0;
+        flex-wrap: wrap;
+    }
+
+    .media-controls.active {
+        display: flex;
+    }
+
+    .media-btn {
+        background: #000;
+        border: 1px solid #c0c0c0;
+        color: #c0c0c0;
+        padding: 10px 20px;
+        font-family: 'Courier New', monospace;
+        font-size: 11px;
+        cursor: pointer;
+        letter-spacing: 1px;
+        transition: all 0.3s;
+        min-width: 120px;
+    }
+
+    .media-btn:hover {
+        background: #c0c0c0;
+        color: #000;
+    }
+
+    .media-btn.active {
+        border-color: #00ff00;
+        color: #00ff00;
+    }
+
+    .media-btn.muted {
+        border-color: #ff0000;
+        color: #ff0000;
+    }
+
+    @media (max-width: 768px) {
+        .video-box.remote {
+            width: 100%;
+            max-width: 480px;
+            height: 360px;
+        }
+
+        .video-box.local {
+            width: 100%;
+            max-width: 240px;
+            height: 180px;
+        }
+    }
 </style>
 
 </head>
@@ -373,10 +525,19 @@
     </div>
     
     <div class="setup-panel" id="setupPanel">
-        <h2>ESTABLISH SECURE CHANNEL</h2> 
-        
+        <h2>ESTABLISH SECURE CHANNEL</h2>
+
+        <div class="mode-selector">
+            <label>SELECT COMMUNICATION MODE:</label>
+            <div class="mode-options">
+                <button class="mode-option selected" onclick="selectMode('text')" id="modeText">💬 TEXT ONLY</button>
+                <button class="mode-option" onclick="selectMode('voice')" id="modeVoice">🎤 VOICE</button>
+                <button class="mode-option" onclick="selectMode('video')" id="modeVideo">📹 VIDEO</button>
+            </div>
+        </div>
+
         <div>
-            <button class="big-button" onclick="createSession()" id="createBtn">WH15P3R CHAT</button>
+            <button class="big-button" onclick="createSession()" id="createBtn">START SESSION</button>
         </div>
         
         <div id="sessionCodeDisplay" style="display: none;">
@@ -409,6 +570,24 @@
         </div>
     </div>
     
+    <div class="video-container" id="videoContainer">
+        <div class="video-box remote">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <audio id="remoteAudio" autoplay></audio>
+            <div class="video-label">PEER</div>
+        </div>
+        <div class="video-box local">
+            <video id="localVideo" autoplay playsinline muted></video>
+            <div class="video-label">YOU</div>
+        </div>
+    </div>
+
+    <div class="media-controls" id="mediaControls">
+        <button class="media-btn active" onclick="toggleMic()" id="micBtn">🎤 MIC ON</button>
+        <button class="media-btn active" onclick="toggleCamera()" id="cameraBtn">📹 CAMERA ON</button>
+        <button class="end-button" onclick="endSession()">END SESSION</button>
+    </div>
+
     <div class="chat-container" id="chatContainer">
         <div class="messages" id="messages"></div>
         <div class="input-area">
@@ -417,7 +596,7 @@
             <button class="end-button" onclick="endSession()">END</button>
         </div>
     </div>
-    
+
     <div class="instructions">
         <strong>HOW IT WORKS:</strong>
         <ul>
@@ -477,13 +656,19 @@
 <script>
     // Configuration - UPDATE THIS WITH YOUR SIGNALING SERVER
     const SIGNALING_SERVER = 'wss://whisper-signaling-20-krdws9zr2wyn.ymgholdings.deno.net';
-    
+
     let ws = null;
     let peerConnection = null;
     let dataChannel = null;
     let sessionCode = null;
     let isInitiator = false;
     let isPQSupported = false;
+
+    // Media handling
+    let communicationMode = 'text'; // 'text', 'voice', or 'video'
+    let localStream = null;
+    let micEnabled = true;
+    let cameraEnabled = true;
     
     // Enhanced RTCConfiguration for DTLS 1.3 and PQ support
     const config = {
@@ -602,7 +787,95 @@
         status.textContent = message;
         status.className = 'status ' + type;
     }
-    
+
+    function selectMode(mode) {
+        communicationMode = mode;
+
+        // Update UI
+        document.querySelectorAll('.mode-option').forEach(btn => btn.classList.remove('selected'));
+        document.getElementById('mode' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.add('selected');
+    }
+
+    async function setupMediaStream() {
+        if (communicationMode === 'text') {
+            return; // No media needed for text-only
+        }
+
+        try {
+            const constraints = {
+                audio: true,
+                video: communicationMode === 'video' ? {
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    facingMode: 'user'
+                } : false
+            };
+
+            localStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+            // Display local video/audio
+            if (communicationMode === 'video') {
+                const localVideo = document.getElementById('localVideo');
+                localVideo.srcObject = localStream;
+            }
+
+            // Add tracks to peer connection if it exists
+            if (peerConnection) {
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+            }
+
+            return localStream;
+        } catch (error) {
+            console.error('Error accessing media devices:', error);
+            alert('Could not access camera/microphone. Please check permissions.\n\nError: ' + error.message);
+            throw error;
+        }
+    }
+
+    function toggleMic() {
+        if (!localStream) return;
+
+        const audioTrack = localStream.getAudioTracks()[0];
+        if (audioTrack) {
+            micEnabled = !micEnabled;
+            audioTrack.enabled = micEnabled;
+
+            const micBtn = document.getElementById('micBtn');
+            if (micEnabled) {
+                micBtn.textContent = '🎤 MIC ON';
+                micBtn.classList.remove('muted');
+                micBtn.classList.add('active');
+            } else {
+                micBtn.textContent = '🔇 MIC OFF';
+                micBtn.classList.remove('active');
+                micBtn.classList.add('muted');
+            }
+        }
+    }
+
+    function toggleCamera() {
+        if (!localStream || communicationMode !== 'video') return;
+
+        const videoTrack = localStream.getVideoTracks()[0];
+        if (videoTrack) {
+            cameraEnabled = !cameraEnabled;
+            videoTrack.enabled = cameraEnabled;
+
+            const cameraBtn = document.getElementById('cameraBtn');
+            if (cameraEnabled) {
+                cameraBtn.textContent = '📹 CAMERA ON';
+                cameraBtn.classList.remove('muted');
+                cameraBtn.classList.add('active');
+            } else {
+                cameraBtn.textContent = '📷 CAMERA OFF';
+                cameraBtn.classList.remove('active');
+                cameraBtn.classList.add('muted');
+            }
+        }
+    }
+
     function generateSessionCode() {
         const array = new Uint8Array(16);
         crypto.getRandomValues(array);
@@ -612,31 +885,58 @@
     async function createSession() {
         sessionCode = generateSessionCode();
         isInitiator = true;
-        
+
         document.getElementById('sessionCode').textContent = sessionCode;
         document.getElementById('sessionCodeDisplay').style.display = 'block';
         document.getElementById('createBtn').disabled = true;
         document.getElementById('joinBtn').disabled = true;
         document.getElementById('joinCode').disabled = true;
-        
+
+        // Setup media stream if not text-only mode
+        if (communicationMode !== 'text') {
+            try {
+                await setupMediaStream();
+            } catch (error) {
+                // Reset if media fails
+                document.getElementById('createBtn').disabled = false;
+                document.getElementById('joinBtn').disabled = false;
+                document.getElementById('joinCode').disabled = false;
+                document.getElementById('sessionCodeDisplay').style.display = 'none';
+                return;
+            }
+        }
+
         connectToSignaling();
         updateStatus('⟳ WAITING FOR PEER...', 'waiting');
     }
-    
-    function joinSession() {
+
+    async function joinSession() {
         const code = document.getElementById('joinCode').value.trim().toUpperCase();
         if (!code) {
             alert('Please enter a session code');
             return;
         }
-        
+
         sessionCode = code;
         isInitiator = false;
-        
+
         document.getElementById('createBtn').disabled = true;
         document.getElementById('joinBtn').disabled = true;
         document.getElementById('joinCode').disabled = true;
-        
+
+        // Setup media stream if not text-only mode
+        if (communicationMode !== 'text') {
+            try {
+                await setupMediaStream();
+            } catch (error) {
+                // Reset if media fails
+                document.getElementById('createBtn').disabled = false;
+                document.getElementById('joinBtn').disabled = false;
+                document.getElementById('joinCode').disabled = false;
+                return;
+            }
+        }
+
         connectToSignaling();
         updateStatus('⟳ CONNECTING TO PEER...', 'waiting');
     }
@@ -684,29 +984,43 @@
     async function createOffer() {
         peerConnection = new RTCPeerConnection(config);
         setupPeerConnection();
-        
+
+        // Add media tracks if available
+        if (localStream) {
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+        }
+
         dataChannel = peerConnection.createDataChannel('chat');
         setupDataChannel();
-        
+
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
-        
+
         ws.send(JSON.stringify({
             type: 'offer',
             sessionCode: sessionCode,
             offer: offer
         }));
     }
-    
+
     async function handleOffer(offer) {
         peerConnection = new RTCPeerConnection(config);
         setupPeerConnection();
-        
+
+        // Add media tracks if available
+        if (localStream) {
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+        }
+
         peerConnection.ondatachannel = (event) => {
             dataChannel = event.channel;
             setupDataChannel();
         };
-        
+
         await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
         const answer = await peerConnection.createAnswer();
         await peerConnection.setLocalDescription(answer);
@@ -738,17 +1052,50 @@
                 }));
             }
         };
-        
+
+        // Handle incoming media tracks
+        peerConnection.ontrack = (event) => {
+            console.log('Received remote track:', event.track.kind);
+
+            if (event.track.kind === 'video') {
+                const remoteVideo = document.getElementById('remoteVideo');
+                if (remoteVideo.srcObject !== event.streams[0]) {
+                    remoteVideo.srcObject = event.streams[0];
+                }
+            } else if (event.track.kind === 'audio') {
+                const remoteAudio = document.getElementById('remoteAudio');
+                if (remoteAudio.srcObject !== event.streams[0]) {
+                    remoteAudio.srcObject = event.streams[0];
+                }
+            }
+        };
+
         peerConnection.onconnectionstatechange = () => {
             if (peerConnection.connectionState === 'connected') {
                 // Check if PQ encryption is actually being used
                 checkPQEncryption();
-                
+
                 updateStatus('✓ SECURE P2P CONNECTION ESTABLISHED', 'connected');
                 document.getElementById('securityBadge').classList.add('active');
                 document.getElementById('chatContainer').classList.add('secure');
+
+                // Show appropriate UI based on mode
+                if (communicationMode === 'text') {
+                    document.getElementById('chatContainer').classList.add('active');
+                } else {
+                    document.getElementById('videoContainer').classList.add('active');
+                    document.getElementById('mediaControls').classList.add('active');
+                    if (communicationMode === 'video') {
+                        document.getElementById('cameraBtn').style.display = 'inline-block';
+                    } else {
+                        document.getElementById('cameraBtn').style.display = 'none';
+                    }
+                    // Also show chat for text alongside voice/video
+                    document.getElementById('chatContainer').classList.add('active');
+                }
+
                 if (ws) ws.close();
-            } else if (peerConnection.connectionState === 'disconnected' || 
+            } else if (peerConnection.connectionState === 'disconnected' ||
                        peerConnection.connectionState === 'failed') {
                 updateStatus('⚠ CONNECTION LOST', 'error');
                 document.getElementById('securityBadge').classList.remove('active');
@@ -897,22 +1244,48 @@
     
     function endSession() {
         if (confirm('End session? All messages and encryption keys will be permanently destroyed.')) {
+            // Stop all media tracks
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+
+            // Clear video elements
+            const localVideo = document.getElementById('localVideo');
+            const remoteVideo = document.getElementById('remoteVideo');
+            const remoteAudio = document.getElementById('remoteAudio');
+            if (localVideo.srcObject) {
+                localVideo.srcObject.getTracks().forEach(track => track.stop());
+                localVideo.srcObject = null;
+            }
+            if (remoteVideo.srcObject) {
+                remoteVideo.srcObject.getTracks().forEach(track => track.stop());
+                remoteVideo.srcObject = null;
+            }
+            if (remoteAudio.srcObject) {
+                remoteAudio.srcObject.getTracks().forEach(track => track.stop());
+                remoteAudio.srcObject = null;
+            }
+
             if (dataChannel) dataChannel.close();
             if (peerConnection) peerConnection.close();
             if (ws) ws.close();
-            
+
             // Force cleanup
             dataChannel = null;
             peerConnection = null;
             ws = null;
             sessionCode = null;
-            
+
             location.reload();
         }
     }
     
     // Clear everything on page unload
     window.addEventListener('beforeunload', () => {
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+        }
         if (dataChannel) dataChannel.close();
         if (peerConnection) peerConnection.close();
         if (ws) ws.close();
