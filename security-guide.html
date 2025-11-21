@@ -262,6 +262,49 @@
             <span class="threat-level threat-extreme">EXTREME RISK</span>
         </div>
 
+        <h2>COMMUNICATION MODES</h2>
+
+        <p>WH15P3R supports three modes of communication, all with the same post-quantum encryption:</p>
+
+        <h3>💬 Text-Only Mode</h3>
+        <ul>
+            <li>Traditional encrypted messaging</li>
+            <li>Lowest bandwidth requirements</li>
+            <li>Works on any connection speed</li>
+            <li>Best for maximum privacy (no camera/mic access needed)</li>
+        </ul>
+
+        <h3>🎤 Voice Mode</h3>
+        <ul>
+            <li>Encrypted voice calls with optional text chat</li>
+            <li>Requires microphone permission</li>
+            <li>Audio encrypted with same PQ-resistant DTLS 1.3</li>
+            <li>Voice transmitted via SRTP (Secure Real-time Transport Protocol)</li>
+            <li>No recording on any server - direct P2P audio stream</li>
+        </ul>
+
+        <h3>📹 Video Mode</h3>
+        <ul>
+            <li>Encrypted video calls with voice and optional text chat</li>
+            <li>Requires camera and microphone permissions</li>
+            <li>Video and audio encrypted end-to-end</li>
+            <li>Higher bandwidth requirements (recommend WiFi or 4G/5G)</li>
+            <li>Toggle camera/mic on or off during call</li>
+        </ul>
+
+        <div class="alert alert-info">
+            <strong>SECURITY NOTE:</strong> All three modes use the same post-quantum encryption (ML-KEM/Kyber hybrid in DTLS 1.3). Voice and video are transmitted as SRTP streams, encrypted the same way as text. The only difference is bandwidth usage and device permissions required.
+        </div>
+
+        <div class="alert alert-warning">
+            <strong>⚠ PRIVACY WARNING FOR VIDEO/VOICE:</strong><br>
+            • Granting camera/microphone access exposes more of your environment<br>
+            • For highest-security scenarios, use text-only mode<br>
+            • Video reveals your appearance, location details (background), and metadata<br>
+            • Voice reveals accent, background noise, and other identifying information<br>
+            • Consider operational security before using voice/video modes
+        </div>
+
         <h2>LEVEL 1: BASIC SECURITY</h2>
         <div class="threat-level threat-low">LOW RISK</div>
         
@@ -278,11 +321,13 @@
             <li><strong>Use a modern browser:</strong> Chrome 142+, Edge 142+, or Firefox 120+</li>
             <li><strong>Visit:</strong> <code>wh15p3r.link</code></li>
             <li><strong>Look for:</strong> <span class="security-indicator indicator-good">🔒 POST-QUANTUM READY</span></li>
-            <li><strong>Click:</strong> "WH15P3R CHAT" to generate session code</li>
+            <li><strong>Select mode:</strong> Text, Voice, or Video (text-only recommended for privacy)</li>
+            <li><strong>Click:</strong> "START SESSION" to generate session code</li>
+            <li><strong>Grant permissions:</strong> Allow camera/mic if using voice/video mode</li>
             <li><strong>Share code</strong> with your contact via separate channel</li>
             <li><strong>Verify:</strong> Green border = connection secure</li>
             <li><strong>Check for:</strong> <span class="security-indicator indicator-good">🔒 Q POST-QUANTUM ACTIVE</span></li>
-            <li><strong>Chat safely:</strong> Messages are quantum-resistant encrypted</li>
+            <li><strong>Communicate safely:</strong> All communications are quantum-resistant encrypted</li>
             <li><strong>End session:</strong> Click "END" when finished</li>
         </ol>
 
