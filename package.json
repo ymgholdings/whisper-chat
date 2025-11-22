@@ -4,19 +4,24 @@
     "description": "Minimal WebRTC signaling server with zero persistence",
     "main": "server.js",
     "scripts": {
-      "start": "node server.js",
-      "dev": "nodemon server.js"
+        "start": "node server.js",
+        "dev": "nodemon server.js"
     },
-    "keywords": ["webrtc", "signaling", "secure", "p2p"],
+    "keywords": [
+        "webrtc",
+        "signaling",
+        "secure",
+        "p2p"
+    ],
     "author": "",
     "license": "MIT",
     "dependencies": {
-      "ws": "^8.14.2"
+        "ws": "^8.18.3"
     },
     "devDependencies": {
-      "nodemon": "^3.0.1"
+        "nodemon": "^3.0.1"
     },
     "engines": {
-      "node": ">=16.0.0"
+        "node": ">=16.0.0"
     }
-  }
+}
