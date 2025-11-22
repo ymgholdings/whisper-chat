@@ -809,6 +809,7 @@
             man-in-the-middle attacks.
           </div>
           <div class="waiting-message" id="waitingMessage">⟳ Waiting for peer connection...</div>
+          <div id="debugOutput" style="margin-top: 10px; padding: 10px; background: rgba(255,255,0,0.1); border: 1px solid yellow; font-size: 11px; font-family: monospace; color: #ffeb3b; display: none;"></div>
         </div>
 
         <div class="vpn-confirm-row">
@@ -1183,10 +1184,23 @@
     }
   }
 
+  function debugLog(message) {
+    const debug = document.getElementById('debugOutput');
+    if (debug) {
+      debug.style.display = 'block';
+      const time = new Date().toLocaleTimeString();
+      debug.innerHTML += `[${time}] ${message}<br>`;
+      debug.scrollTop = debug.scrollHeight;
+    }
+    console.log('[DEBUG]', message);
+  }
+
   function connectToSignaling() {
+    debugLog('Connecting to signaling server...');
     ws = new WebSocket(SIGNALING_SERVER);
 
     ws.onopen = () => {
+      debugLog('WebSocket opened, sending join request');
       ws.send(JSON.stringify({
         type: 'join',
         sessionCode: sessionCode,
@@ -1196,25 +1210,32 @@
 
     ws.onmessage = async (event) => {
       const data = JSON.parse(event.data);
+      debugLog(`Received: ${data.type}`);
 
       if (data.type === 'ready') {
+        debugLog('Both peers connected to signaling server');
         if (isInitiator) {
           await createOffer();
         }
       } else if (data.type === 'offer') {
+        debugLog('Received offer from peer');
         await handleOffer(data.offer);
       } else if (data.type === 'answer') {
+        debugLog('Received answer from peer');
         await handleAnswer(data.answer);
       } else if (data.type === 'ice-candidate') {
+        debugLog('Received ICE candidate');
         await handleIceCandidate(data.candidate);
       }
     };
 
-    ws.onerror = () => {
+    ws.onerror = (error) => {
+      debugLog('WebSocket error occurred');
       updateStatus('Connection error - check server', false);
     };
 
     ws.onclose = () => {
+      debugLog('WebSocket closed');
       if (!(dataChannel && dataChannel.readyState === 'open')) {
         updateStatus('Signaling disconnected', false);
       }
@@ -1306,10 +1327,12 @@
     };
 
     peerConnection.onconnectionstatechange = () => {
+      debugLog(`Connection state: ${peerConnection.connectionState}`);
       if (peerConnection.connectionState === 'connected') {
+        debugLog('P2P connection established! Switching UI...');
         checkPQEncryption();
         updateStatus('Secure P2P connection established', true);
-        
+
         document.getElementById('setupInterface').style.display = 'none';
         document.getElementById('chatInterface').classList.add('active');
 
@@ -1318,8 +1341,10 @@
         }
 
         if (ws) ws.close();
-      } else if (peerConnection.connectionState === 'disconnected' || 
+        debugLog('UI switched to chat/media interface');
+      } else if (peerConnection.connectionState === 'disconnected' ||
                  peerConnection.connectionState === 'failed') {
+        debugLog(`Connection ${peerConnection.connectionState}`);
         updateStatus('Connection lost', false);
       }
     };
