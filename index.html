@@ -994,6 +994,18 @@
     const secBrowserDetail = document.getElementById('secBrowserDetail');
     const browserHint = document.getElementById('browserHint');
 
+    // Debug bypass - add ?debug=true to URL to bypass PQ check for testing
+    const urlParams = new URLSearchParams(window.location.search);
+    const debugMode = urlParams.get('debug') === 'true';
+
+    if (debugMode) {
+      debugLog('DEBUG MODE ENABLED - PQ check bypassed');
+      secBrowser.classList.remove('warn');
+      secBrowser.classList.add('ok');
+      secBrowserDetail.textContent = 'DEBUG MODE - PQ check bypassed';
+      return; // Skip PQ check
+    }
+
     let browserName = 'Unknown';
     let version = 0;
     let pqSupport = false;
