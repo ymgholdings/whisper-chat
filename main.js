@@ -44,12 +44,12 @@ socket.onopen = () => {
 socket.onmessage = (event) => {
   try {
     const data = JSON.parse(event.data);
-    
+
     if (data.type === "join") {
       handleJoin(socket, data);
       currentSessionCode = data.sessionCode;
     } else if (data.type === "offer" || data.type === "answer" || data.type === "ice-candidate") {
-      relay(data);
+      relay(socket, data);
     }
   } catch (e) {
     // Silently ignore malformed messages
@@ -124,8 +124,8 @@ safeSend(session.joiner, JSON.stringify({ type: “ready” }));
 }
 }
 
-function relay(data) {
-const { sessionCode, type } = data;
+function relay(senderSocket, data) {
+const { sessionCode } = data;
 
 if (!sessions.has(sessionCode)) {
 return;
@@ -135,21 +135,17 @@ const session = sessions.get(sessionCode);
 session.lastActivity = Date.now();
 const message = JSON.stringify(data);
 
-// Relay to the other peer
-if (session.initiator && session.joiner) {
-if (type === “offer” || type === “ice-candidate”) {
-// From initiator to joiner
-safeSend(session.joiner, message);
-} else if (type === “answer”) {
-// From joiner to initiator
-safeSend(session.initiator, message);
-} else if (type === “ice-candidate”) {
-// ICE candidates can go both ways
-// Determine which direction based on which socket it didn’t come from
-// This is a simplified relay - in practice, the client handles direction
-safeSend(session.initiator, message);
-safeSend(session.joiner, message);
+// Determine the recipient (the peer that is NOT the sender)
+let recipient = null;
+if (session.initiator === senderSocket) {
+recipient = session.joiner;
+} else if (session.joiner === senderSocket) {
+recipient = session.initiator;
 }
+
+// Relay to the other peer
+if (recipient) {
+safeSend(recipient, message);
 }
 }
 
