@@ -34,7 +34,6 @@ headers: { “Content-Type”: “application/json” }
 if (req.headers.get(“upgrade”) === “websocket”) {
 const { socket, response } = Deno.upgradeWebSocket(req);
 
-```
 let currentSessionCode = null;
 
 socket.onopen = () => {
@@ -80,8 +79,6 @@ socket.onerror = (error) => {
 };
 
 return response;
-```
-
 }
 
 // Root endpoint
