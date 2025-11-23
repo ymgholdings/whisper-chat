@@ -1230,12 +1230,13 @@
     };
 
     ws.onerror = (error) => {
-      debugLog('WebSocket error occurred');
+      debugLog(`WebSocket error: ${error.message || 'Connection failed'}`);
+      debugLog(`Attempting to connect to: ${SIGNALING_SERVER}`);
       updateStatus('Connection error - check server', false);
     };
 
-    ws.onclose = () => {
-      debugLog('WebSocket closed');
+    ws.onclose = (event) => {
+      debugLog(`WebSocket closed - Code: ${event.code}, Reason: ${event.reason || 'No reason provided'}, Clean: ${event.wasClean}`);
       if (!(dataChannel && dataChannel.readyState === 'open')) {
         updateStatus('Signaling disconnected', false);
       }
@@ -1347,6 +1348,14 @@
         debugLog(`Connection ${peerConnection.connectionState}`);
         updateStatus('Connection lost', false);
       }
+    };
+
+    peerConnection.oniceconnectionstatechange = () => {
+      debugLog(`ICE connection state: ${peerConnection.iceConnectionState}`);
+    };
+
+    peerConnection.onsignalingstatechange = () => {
+      debugLog(`Signaling state: ${peerConnection.signalingState}`);
     };
   }
 
