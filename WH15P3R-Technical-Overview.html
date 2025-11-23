@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WH15P3R Technical Overview</title>
+    <style>
+        @media print {
+            body {
+                margin: 0.5in;
+                font-size: 11pt;
+            }
+            h1 { page-break-before: always; }
+            h1:first-of-type { page-break-before: avoid; }
+            table { page-break-inside: avoid; }
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 8.5in;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+            color: #000;
+        }
+
+        h1 {
+            color: #000;
+            border-bottom: 3px solid #000;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+
+        h2 {
+            color: #333;
+            margin-top: 25px;
+            border-bottom: 1px solid #666;
+            padding-bottom: 5px;
+        }
+
+        h3 {
+            color: #000;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            border: 1px solid #333;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #e0e0e0;
+            font-weight: bold;
+        }
+
+        ul {
+            margin-left: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            border: none;
+            font-size: 32pt;
+            letter-spacing: 8px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-style: italic;
+            color: #666;
+            font-size: 12pt;
+        }
+
+        .box {
+            border: 2px solid #000;
+            padding: 15px;
+            margin: 20px 0;
+            background: #f5f5f5;
+        }
+
+        .box-title {
+            font-weight: bold;
+            font-size: 14pt;
+            margin-bottom: 10px;
+        }
+
+        code {
+            background: #e8e8e8;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .checkmark { color: #008000; font-weight: bold; }
+        .xmark { color: #c00; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>WH15P3R</h1>
+    <p>Post-Quantum Encrypted Communication Platform</p>
+    <p>Technical Overview & Security Analysis</p>
+    <p style="margin-top: 20px; font-size: 10pt;">https://wh15p3r.link | ymgholdings/whisper-chat</p>
+</div>
+
+<h1>Executive Summary</h1>
+<p><strong>WH15P3R</strong> is a zero-storage, post-quantum encrypted communication platform supporting text, voice, and video. It provides quantum-resistant end-to-end encryption through ML-KEM (Kyber) hybrid key exchange in DTLS 1.3, with direct peer-to-peer communication and ephemeral session keys.</p>
+
+<h1>Core Security Features</h1>
+
+<h2>Post-Quantum Encryption</h2>
+<ul>
+    <li>Uses <strong>ML-KEM (Kyber) hybrid key exchange</strong> in DTLS 1.3</li>
+    <li>Protects against <strong>"harvest now, decrypt later"</strong> quantum attacks</li>
+    <li>SRTP (Secure Real-time Transport Protocol) for media encryption with same PQ-resistant keys</li>
+    <li>NIST-standardized ML-KEM (FIPS 203) quantum-resistant algorithms</li>
+</ul>
+
+<div class="box">
+    <div class="box-title">Supported Browsers (PQ-Capable)</div>
+    <ul style="margin: 10px 0;">
+        <li><strong>Chrome/Edge 142+</strong> or <strong>Brave 1.73+</strong> (Chromium-based)</li>
+        <li><strong>Firefox 120+</strong> or <strong>Tor Browser 14.0+</strong> (Firefox-based)</li>
+        <li><strong>Safari 17.2+</strong> (TLS PQ support)</li>
+    </ul>
+    <p style="margin-top: 10px; font-style: italic;"><strong>Note:</strong> Non-PQ browsers are blocked from connecting to enforce quantum-resistance.</p>
+</div>
+
+<h2>Zero Metadata Architecture</h2>
+<ul>
+    <li><strong>No user accounts</strong> - No phone numbers, emails, or registration required</li>
+    <li><strong>No storage</strong> - No message/call history stored anywhere (not even encrypted)</li>
+    <li><strong>Ephemeral keys</strong> - Session keys destroyed on disconnect, cannot be reconstructed</li>
+    <li><strong>Minimal server role</strong> - Server only facilitates initial WebRTC handshake (~1-2 seconds), then connection closes</li>
+</ul>
+
+<h2>Direct Peer-to-Peer Architecture</h2>
+<ul>
+    <li>WebRTC establishes <strong>direct P2P connection</strong> between users</li>
+    <li>After initial handshake, <strong>all traffic bypasses servers</strong> entirely</li>
+    <li>No relay servers record metadata or traffic patterns</li>
+    <li>Low latency, high quality (depends on users' internet, not server bandwidth)</li>
+</ul>
+
+<h1>Communication Modes</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Mode</th>
+            <th>Capabilities</th>
+            <th>Encryption</th>
+            <th>Bandwidth</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>💬 Text</strong></td>
+            <td>Encrypted messaging</td>
+            <td>PQ DTLS 1.3</td>
+            <td>Minimal</td>
+        </tr>
+        <tr>
+            <td><strong>🎤 Voice</strong></td>
+            <td>Audio calls + text</td>
+            <td>PQ DTLS 1.3 + SRTP</td>
+            <td>Medium</td>
+        </tr>
+        <tr>
+            <td><strong>📹 Video</strong></td>
+            <td>Video + audio + text</td>
+            <td>PQ DTLS 1.3 + SRTP</td>
+            <td>High</td>
+        </tr>
+    </tbody>
+</table>
+
+<p><strong>Note:</strong> All three modes use the same post-quantum encryption. The only difference is bandwidth usage and device permissions required (camera/mic).</p>
+
+<h1>Comparison: WH15P3R vs Signal</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>WH15P3R</th>
+            <th>Signal</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Account Required</strong></td>
+            <td>None</td>
+            <td>Phone number mandatory</td>
+        </tr>
+        <tr>
+            <td><strong>Message Storage</strong></td>
+            <td>Zero (ephemeral only)</td>
+            <td>Stored on devices</td>
+        </tr>
+        <tr>
+            <td><strong>Server Knowledge</strong></td>
+            <td>No user identity, messages, or metadata</td>
+            <td>Phone numbers, message metadata, push tokens</td>
+        </tr>
+        <tr>
+            <td><strong>Post-Quantum</strong></td>
+            <td><span class="checkmark">✓</span> Yes (ML-KEM in DTLS 1.3)</td>
+            <td>Partial (PQXDH for initial handshake only)</td>
+        </tr>
+        <tr>
+            <td><strong>Infrastructure</strong></td>
+            <td>Browser-based, no app install</td>
+            <td>Requires app installation</td>
+        </tr>
+        <tr>
+            <td><strong>Video/Voice Encryption</strong></td>
+            <td>PQ-encrypted via WebRTC DTLS 1.3</td>
+            <td>Classical encryption (non-PQ)</td>
+        </tr>
+        <tr>
+            <td><strong>Session Model</strong></td>
+            <td>Temporary, code-based</td>
+            <td>Persistent contacts</td>
+        </tr>
+        <tr>
+            <td><strong>Metadata Resistance</strong></td>
+            <td>High (minimal metadata generated)</td>
+            <td>Medium (server knows who talks to whom)</td>
+        </tr>
+        <tr>
+            <td><strong>Server Compromise Risk</strong></td>
+            <td><span class="checkmark">✓</span> Nothing to seize</td>
+            <td>Can expose social graph, metadata</td>
+        </tr>
+    </tbody>
+</table>
+
+<h1>Threat Model Analysis</h1>
+
+<h2>Strongest Protection Against:</h2>
+<div class="box">
+    <ul>
+        <li><span class="checkmark">✓</span> <strong>Network surveillance</strong> - All traffic PQ-encrypted, unbreakable even with quantum computers</li>
+        <li><span class="checkmark">✓</span> <strong>Server compromise</strong> - No data stored to seize</li>
+        <li><span class="checkmark">✓</span> <strong>Future quantum computers</strong> - ML-KEM resistance to Shor's algorithm</li>
+        <li><span class="checkmark">✓</span> <strong>Metadata analysis</strong> - Minimal metadata generated, no social graph stored</li>
+        <li><span class="checkmark">✓</span> <strong>"Harvest now, decrypt later"</strong> - Captured traffic remains encrypted forever</li>
+    </ul>
+</div>
+
+<h2>Cannot Protect Against:</h2>
+<div class="box">
+    <ul>
+        <li><span class="xmark">✗</span> <strong>Compromised endpoints</strong> - Malware, keyloggers, screen recording on user devices</li>
+        <li><span class="xmark">✗</span> <strong>Physical device seizure</strong> - Messages visible on screen during active session</li>
+        <li><span class="xmark">✗</span> <strong>Physical coercion</strong> - Rubber-hose cryptanalysis (torture for passwords)</li>
+        <li><span class="xmark">✗</span> <strong>Complete metadata hiding</strong> - Timing, duration, and frequency of connections may be observable</li>
+    </ul>
+</div>
+
+<h2>Mitigation Strategies:</h2>
+<ul>
+    <li><strong>Tor Browser:</strong> Use Tor to hide IP addresses from both server and peer</li>
+    <li><strong>Tails OS:</strong> Boot from USB, leaves zero traces on device</li>
+    <li><strong>Out-of-band verification:</strong> Verify session codes via phone call to prevent MITM attacks</li>
+    <li><strong>Public WiFi:</strong> Access from random locations, never home/work</li>
+    <li><strong>Operational security:</strong> Vary patterns, assume digital communications monitored</li>
+</ul>
+
+<h1>Technical Architecture</h1>
+
+<h2>Session Establishment Flow</h2>
+<ol>
+    <li><strong>User A</strong> selects mode (text/voice/video) and clicks "START SESSION"</li>
+    <li>Browser generates <strong>ephemeral session code</strong> (cryptographically random)</li>
+    <li>User A shares code with User B via <strong>separate secure channel</strong> (phone, in-person)</li>
+    <li><strong>WebRTC signaling</strong> via WebSocket to coordinate initial handshake</li>
+    <li><strong>DTLS 1.3 handshake</strong> with ML-KEM key exchange establishes PQ-encrypted channel</li>
+    <li><strong>ICE/STUN negotiation</strong> establishes direct P2P connection</li>
+    <li><strong>Signaling server disconnects</strong> - all subsequent traffic is P2P</li>
+    <li><strong>Session ends:</strong> Keys destroyed, media tracks stopped, no trace remains</li>
+</ol>
+
+<h2>Encryption Stack</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Layer</th>
+            <th>Protocol</th>
+            <th>Algorithm</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Key Exchange</strong></td>
+            <td>DTLS 1.3</td>
+            <td>ML-KEM (Kyber) hybrid</td>
+        </tr>
+        <tr>
+            <td><strong>Media Encryption</strong></td>
+            <td>SRTP</td>
+            <td>AES-GCM (keys from PQ handshake)</td>
+        </tr>
+        <tr>
+            <td><strong>Data Channel</strong></td>
+            <td>SCTP over DTLS</td>
+            <td>Same PQ keys</td>
+        </tr>
+    </tbody>
+</table>
+
+<h1>Deployment Information</h1>
+
+<h2>Infrastructure Requirements</h2>
+<ul>
+    <li><strong>Static hosting:</strong> GitHub Pages (or any HTTPS static host)</li>
+    <li><strong>Signaling server:</strong> Minimal WebSocket server (Deno Deploy, Node.js)</li>
+    <li><strong>No database:</strong> Everything ephemeral, in-memory only</li>
+    <li><strong>Bandwidth:</strong> Minimal (signaling only), P2P handles all media</li>
+</ul>
+
+<h2>Cost Analysis</h2>
+<ul>
+    <li><strong>Static hosting:</strong> $0 (GitHub Pages)</li>
+    <li><strong>Signaling server:</strong> $0-5/month (Deno Deploy free tier)</li>
+    <li><strong>Media bandwidth:</strong> $0 (P2P means users pay their own ISP)</li>
+    <li><strong>Total:</strong> ~$0/month for thousands of concurrent sessions</li>
+</ul>
+
+<h1>Security Recommendations</h1>
+
+<div class="box">
+    <div class="box-title">For Maximum Security:</div>
+    <ol>
+        <li><strong>Use Tor Browser</strong> - Hides IP address, prevents traffic correlation</li>
+        <li><strong>Verify session codes out-of-band</strong> - Phone call or in-person to prevent MITM</li>
+        <li><strong>Use from public WiFi</strong> - Random locations, never home/work</li>
+        <li><strong>Text-only mode preferred</strong> - Avoids camera/mic permissions</li>
+        <li><strong>Close immediately after use</strong> - Minimize exposure window</li>
+        <li><strong>Never screenshot or record</strong> - Defeats ephemeral nature</li>
+    </ol>
+</div>
+
+<h1>Use Cases</h1>
+
+<h2>Ideal For:</h2>
+<ul>
+    <li>Journalists communicating with sources</li>
+    <li>Whistleblowers sharing sensitive information</li>
+    <li>Activists in authoritarian countries</li>
+    <li>High-risk temporary communications</li>
+    <li>Anyone requiring zero-trace communications</li>
+</ul>
+
+<h2>Not Ideal For:</h2>
+<ul>
+    <li>Casual daily messaging (use Signal)</li>
+    <li>Persistent contact management</li>
+    <li>File sharing (no storage mechanism)</li>
+    <li>Group conversations (currently 1-on-1 only)</li>
+</ul>
+
+<h1>Conclusion</h1>
+
+<p>WH15P3R fills a unique niche in the secure communications landscape: <strong>maximum-security temporary communications where identity anonymity and zero-trace requirements outweigh convenience</strong>. Unlike Signal (persistent contacts, phone numbers) or traditional messengers, WH15P3R provides:</p>
+
+<ul>
+    <li>True <strong>post-quantum encryption</strong> for all communication modes</li>
+    <li><strong>Zero metadata</strong> generation and storage</li>
+    <li><strong>No user identity</strong> or registration</li>
+    <li><strong>Ephemeral sessions</strong> with no trace after disconnect</li>
+</ul>
+
+<p>It represents the current state-of-the-art in quantum-resistant, privacy-preserving communications technology.</p>
+
+<div style="margin-top: 50px; padding-top: 20px; border-top: 2px solid #000; text-align: center; font-size: 10pt; color: #666;">
+    <p><strong>WH15P3R Technical Overview</strong></p>
+    <p>Document Version 1.0 | November 2025</p>
+    <p>https://wh15p3r.link | https://github.com/ymgholdings/whisper-chat</p>
+</div>
+
+</body>
+</html>

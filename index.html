@@ -516,12 +516,15 @@
 
         <div class="status" id="status">READY</div>
     
-    <div id="browserWarning" style="display: none; background: #1a0000; border: 1px solid #ff6600; padding: 15px; margin-bottom: 20px; font-size: 11px; color: #ff6600;">
-        <strong>⚠ POST-QUANTUM WARNING:</strong><br>
-        Your browser may not support post-quantum encryption in WebRTC. For maximum security against future quantum attacks, please use:<br>
+    <div id="browserWarning" style="display: none; background: #1a0000; border: 2px solid #ff0000; padding: 20px; margin-bottom: 20px; font-size: 12px; color: #ff0000; text-align: center;">
+        <strong style="font-size: 16px; letter-spacing: 2px;">❌ BROWSER BLOCKED - POST-QUANTUM ENCRYPTION REQUIRED</strong><br><br>
+        Your browser does not support post-quantum encryption. WH15P3R requires PQ-capable browsers to prevent "harvest now, decrypt later" quantum attacks.<br><br>
+        <strong>Supported browsers:</strong><br>
         • Chrome/Edge 142+ or Brave 1.73+ (Chromium-based)<br>
         • Firefox 120+ or Tor Browser 14.0+ (Firefox-based)<br>
-        Current browser: <span id="browserInfo"></span>
+        • Safari 17.2+ (limited support)<br><br>
+        <strong>Current browser:</strong> <span id="browserInfo"></span><br><br>
+        <a href="https://www.torproject.org/" target="_blank" style="color: #4a9eff; text-decoration: underline;">Download Tor Browser (Recommended)</a>
     </div>
     
     <div class="setup-panel" id="setupPanel">
@@ -740,9 +743,19 @@
         let browserName = 'Unknown';
         let version = 0;
         let pqSupport = false;
-        
+
+        // Brave detection (must come before Chrome detection)
+        if (ua.includes('Brave')) {
+            browserName = 'Brave';
+            // Brave is Chromium-based, check Chrome version
+            const match = ua.match(/Chrome\/(\d+)/);
+            if (match) {
+                version = parseInt(match[1]);
+                pqSupport = version >= 142; // Same as Chrome
+            }
+        }
         // Chrome/Chromium/Edge detection
-        if (ua.includes('Chrome/') || ua.includes('Edg/')) {
+        else if (ua.includes('Chrome/') || ua.includes('Edg/')) {
             const match = ua.match(/(Chrome|Edg)\/(\d+)/);
             if (match) {
                 browserName = match[1] === 'Edg' ? 'Edge' : 'Chrome';
@@ -756,29 +769,40 @@
             if (match) {
                 browserName = 'Firefox';
                 version = parseInt(match[1]);
-                // Firefox has DTLS 1.3, PQ support likely in recent versions
-                pqSupport = version >= 120; // Conservative estimate
+                pqSupport = version >= 120; // PQ support in Firefox 120+
             }
         }
         // Safari detection
         else if (ua.includes('Safari/') && !ua.includes('Chrome')) {
             browserName = 'Safari';
-            pqSupport = true; // Safari has PQ in TLS, DTLS status unclear
+            const match = ua.match(/Version\/(\d+)/);
+            if (match) {
+                version = parseInt(match[1]);
+                pqSupport = version >= 17; // Safari 17.2+ has PQ in TLS
+            }
         }
-        
+
         browserInfo.textContent = `${browserName} ${version || 'unknown version'}`;
         isPQSupported = pqSupport;
-        
+
         if (pqSupport) {
             pqBadge.textContent = '🔒 POST-QUANTUM READY';
             pqBadge.style.borderColor = '#00ff00';
             pqBadge.style.color = '#00ff00';
             browserWarning.style.display = 'none';
         } else {
-            pqBadge.textContent = '⚠ PQ NOT SUPPORTED';
-            pqBadge.style.borderColor = '#ff6600';
-            pqBadge.style.color = '#ff6600';
+            pqBadge.textContent = '❌ PQ NOT SUPPORTED - BLOCKED';
+            pqBadge.style.borderColor = '#ff0000';
+            pqBadge.style.color = '#ff0000';
             browserWarning.style.display = 'block';
+
+            // BLOCK non-PQ browsers
+            document.getElementById('createBtn').disabled = true;
+            document.getElementById('joinBtn').disabled = true;
+            document.getElementById('joinCode').disabled = true;
+
+            // Update status
+            updateStatus('⚠ BROWSER NOT SUPPORTED - UPGRADE REQUIRED', 'error');
         }
     }
     
