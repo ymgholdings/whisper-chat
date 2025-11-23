@@ -808,6 +808,7 @@
             man-in-the-middle attacks.
           </div>
           <div class="waiting-message" id="waitingMessage">⟳ Waiting for peer connection...</div>
+          <div id="debugOutput" style="position: fixed; bottom: 10px; left: 10px; right: 10px; max-height: 200px; overflow-y: auto; z-index: 9999; padding: 10px; background: rgba(0,0,0,0.9); border: 1px solid yellow; font-size: 11px; font-family: monospace; color: #ffeb3b; display: none;"></div>
         </div>
 
         <div class="vpn-confirm-row">
@@ -1257,72 +1258,89 @@
   }
 
   async function createOffer() {
+    debugLog('Creating peer connection and offer (initiator)...');
     peerConnection = new RTCPeerConnection(config);
     setupPeerConnection();
 
     if (localStream) {
       localStream.getTracks().forEach(track => {
         peerConnection.addTrack(track, localStream);
+        debugLog(`Added ${track.kind} track to peer connection`);
       });
     }
 
     dataChannel = peerConnection.createDataChannel('chat');
     setupDataChannel();
+    debugLog('Data channel created');
 
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
+    debugLog('Offer created and set as local description');
 
     ws.send(JSON.stringify({
       type: 'offer',
       sessionCode: sessionCode,
       offer: offer
     }));
+    debugLog('Offer sent to peer via signaling server');
   }
 
   async function handleOffer(offer) {
+    debugLog('Handling offer from initiator (joiner)...');
     peerConnection = new RTCPeerConnection(config);
     setupPeerConnection();
 
     if (localStream) {
       localStream.getTracks().forEach(track => {
         peerConnection.addTrack(track, localStream);
+        debugLog(`Added ${track.kind} track to peer connection`);
       });
     }
 
     peerConnection.ondatachannel = (event) => {
       dataChannel = event.channel;
       setupDataChannel();
+      debugLog('Data channel received from initiator');
     };
 
     await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+    debugLog('Remote description (offer) set');
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
+    debugLog('Answer created and set as local description');
 
     ws.send(JSON.stringify({
       type: 'answer',
       sessionCode: sessionCode,
       answer: answer
     }));
+    debugLog('Answer sent to peer via signaling server');
   }
 
   async function handleAnswer(answer) {
+    debugLog('Handling answer from joiner (initiator)...');
     await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    debugLog('Remote description (answer) set - negotiation complete');
   }
 
   async function handleIceCandidate(candidate) {
     if (peerConnection) {
       await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      debugLog(`ICE candidate added: ${candidate.candidate ? 'relay/srflx/host' : 'end-of-candidates'}`);
     }
   }
 
   function setupPeerConnection() {
     peerConnection.onicecandidate = (event) => {
       if (event.candidate && ws && ws.readyState === WebSocket.OPEN) {
+        debugLog(`Sending ICE candidate: ${event.candidate.type || 'unknown'}`);
         ws.send(JSON.stringify({
           type: 'ice-candidate',
           sessionCode: sessionCode,
           candidate: event.candidate
         }));
+      } else if (!event.candidate) {
+        debugLog('All ICE candidates have been sent');
       }
     };
 
