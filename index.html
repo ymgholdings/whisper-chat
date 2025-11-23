@@ -809,7 +809,7 @@
             man-in-the-middle attacks.
           </div>
           <div class="waiting-message" id="waitingMessage">⟳ Waiting for peer connection...</div>
-          <div id="debugOutput" style="margin-top: 10px; padding: 10px; background: rgba(255,255,0,0.1); border: 1px solid yellow; font-size: 11px; font-family: monospace; color: #ffeb3b; display: none;"></div>
+          <div id="debugOutput" style="position: fixed; bottom: 10px; left: 10px; right: 10px; max-height: 200px; overflow-y: auto; z-index: 9999; padding: 10px; background: rgba(0,0,0,0.9); border: 1px solid yellow; font-size: 11px; font-family: monospace; color: #ffeb3b; display: none;"></div>
         </div>
 
         <div class="vpn-confirm-row">
@@ -1328,7 +1328,7 @@
     };
 
     peerConnection.onconnectionstatechange = () => {
-      debugLog(`Connection state: ${peerConnection.connectionState}`);
+      debugLog(`Connection state: ${peerConnection.connectionState} (ICE: ${peerConnection.iceConnectionState})`);
       if (peerConnection.connectionState === 'connected') {
         debugLog('P2P connection established! Switching UI...');
         checkPQEncryption();
@@ -1343,10 +1343,14 @@
 
         if (ws) ws.close();
         debugLog('UI switched to chat/media interface');
-      } else if (peerConnection.connectionState === 'disconnected' ||
-                 peerConnection.connectionState === 'failed') {
-        debugLog(`Connection ${peerConnection.connectionState}`);
+      } else if (peerConnection.connectionState === 'disconnected') {
+        debugLog(`⚠️ Connection disconnected - ICE state: ${peerConnection.iceConnectionState}`);
         updateStatus('Connection lost', false);
+      } else if (peerConnection.connectionState === 'failed') {
+        debugLog(`❌ Connection failed - ICE state: ${peerConnection.iceConnectionState}`);
+        updateStatus('Connection lost', false);
+      } else if (peerConnection.connectionState === 'connecting') {
+        debugLog(`🔄 Connection state: connecting`);
       }
     };
 
