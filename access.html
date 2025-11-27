@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Access Required</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #0f0;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .container {
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 1.2rem;
+      margin-bottom: 30px;
+      letter-spacing: 2px;
+      color: #0f0;
+    }
+
+    .code-input {
+      background: #000;
+      border: 1px solid #0f0;
+      color: #0f0;
+      font-family: 'Courier New', monospace;
+      font-size: 2rem;
+      padding: 15px 20px;
+      width: 280px;
+      text-align: center;
+      letter-spacing: 8px;
+      outline: none;
+      margin-bottom: 20px;
+    }
+
+    .code-input:focus {
+      border-color: #0ff;
+      box-shadow: 0 0 10px #0ff;
+    }
+
+    .code-input::placeholder {
+      color: #0f0;
+      opacity: 0.3;
+      letter-spacing: 4px;
+    }
+
+    .error {
+      color: #f00;
+      font-size: 0.9rem;
+      margin-top: 10px;
+      min-height: 20px;
+    }
+
+    .submit-btn {
+      background: #000;
+      border: 1px solid #0f0;
+      color: #0f0;
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+      padding: 10px 30px;
+      cursor: pointer;
+      letter-spacing: 2px;
+      transition: all 0.3s;
+    }
+
+    .submit-btn:hover {
+      background: #0f0;
+      color: #000;
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    /* Subtle cursor blink effect */
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .cursor {
+      animation: blink 1s infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ACCESS REQUIRED<span class="cursor">_</span></h1>
+    <input
+      type="text"
+      id="codeInput"
+      class="code-input"
+      placeholder="••••••"
+      maxlength="8"
+      autocomplete="off"
+      autofocus
+    />
+    <br>
+    <button class="submit-btn" onclick="validateCode()">ENTER</button>
+    <div class="error" id="error"></div>
+  </div>
+
+  <script>
+    // Valid code hashes (SHA-256)
+    // Codes are hashed for security - even if someone views source, they can't generate codes
+    const validCodes = new Set([
+      // Add your hashed codes here - generated from admin.html
+      // Example: SHA-256 hash of "123456"
+    ]);
+
+    // Track used codes (stored in localStorage to persist across page reloads)
+    const USED_CODES_KEY = 'wh15p3r_used_codes';
+
+    async function hashCode(code) {
+      const msgBuffer = new TextEncoder().encode(code);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function getUsedCodes() {
+      const stored = localStorage.getItem(USED_CODES_KEY);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    }
+
+    function markCodeAsUsed(codeHash) {
+      const usedCodes = getUsedCodes();
+      usedCodes.add(codeHash);
+      localStorage.setItem(USED_CODES_KEY, JSON.stringify([...usedCodes]));
+    }
+
+    async function validateCode() {
+      const input = document.getElementById('codeInput');
+      const error = document.getElementById('error');
+      const code = input.value.trim().toUpperCase();
+
+      if (code.length < 6) {
+        error.textContent = 'Code must be at least 6 characters';
+        return;
+      }
+
+      const codeHash = await hashCode(code);
+
+      // Check if code is valid
+      if (!validCodes.has(codeHash)) {
+        error.textContent = 'INVALID CODE';
+        input.value = '';
+        setTimeout(() => error.textContent = '', 2000);
+        return;
+      }
+
+      // Check if code has already been used
+      const usedCodes = getUsedCodes();
+      if (usedCodes.has(codeHash)) {
+        error.textContent = 'CODE ALREADY USED';
+        input.value = '';
+        setTimeout(() => error.textContent = '', 2000);
+        return;
+      }
+
+      // Mark code as used
+      markCodeAsUsed(codeHash);
+
+      // Store access token in sessionStorage (expires when browser closes)
+      sessionStorage.setItem('wh15p3r_access', 'granted');
+
+      // Redirect to main app
+      window.location.href = 'index.html';
+    }
+
+    // Allow Enter key to submit
+    document.getElementById('codeInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        validateCode();
+      }
+    });
+
+    // Only allow alphanumeric characters
+    document.getElementById('codeInput').addEventListener('input', (e) => {
+      e.target.value = e.target.value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+    });
+  </script>
+</body>
+</html>

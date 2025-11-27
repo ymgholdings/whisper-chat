@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Generator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #0f0;
+      font-family: 'Courier New', monospace;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 30px;
+      letter-spacing: 2px;
+      text-align: center;
+    }
+
+    .login-section, .admin-section {
+      background: #000;
+      border: 1px solid #0f0;
+      padding: 30px;
+      margin-bottom: 20px;
+    }
+
+    .admin-section {
+      display: none;
+    }
+
+    input, button {
+      background: #000;
+      border: 1px solid #0f0;
+      color: #0f0;
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+      padding: 10px;
+      margin: 10px 0;
+    }
+
+    input {
+      width: 100%;
+    }
+
+    button {
+      cursor: pointer;
+      padding: 10px 20px;
+      transition: all 0.3s;
+    }
+
+    button:hover {
+      background: #0f0;
+      color: #000;
+    }
+
+    .code-output {
+      margin-top: 20px;
+      padding: 20px;
+      border: 1px solid #0f0;
+      background: #001100;
+    }
+
+    .code-item {
+      margin: 15px 0;
+      padding: 15px;
+      border-left: 3px solid #0f0;
+      background: #000;
+    }
+
+    .code-display {
+      font-size: 1.5rem;
+      letter-spacing: 3px;
+      color: #0ff;
+      margin-bottom: 10px;
+    }
+
+    .hash-display {
+      font-size: 0.8rem;
+      color: #0f0;
+      opacity: 0.7;
+      word-break: break-all;
+    }
+
+    .copy-btn {
+      font-size: 0.8rem;
+      padding: 5px 10px;
+      margin-left: 10px;
+    }
+
+    .instructions {
+      margin-top: 30px;
+      padding: 20px;
+      border: 1px solid #0f0;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .instructions h3 {
+      margin-bottom: 10px;
+      color: #0ff;
+    }
+
+    .instructions code {
+      color: #ff0;
+      background: #001100;
+      padding: 2px 6px;
+    }
+
+    .error {
+      color: #f00;
+      margin: 10px 0;
+    }
+
+    .success {
+      color: #0ff;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>WH15P3R CODE GENERATOR</h1>
+
+    <!-- Login Section -->
+    <div class="login-section" id="loginSection">
+      <h3>Admin Login</h3>
+      <input type="password" id="adminPassword" placeholder="Enter admin password" />
+      <button onclick="login()">LOGIN</button>
+      <div class="error" id="loginError"></div>
+    </div>
+
+    <!-- Admin Section -->
+    <div class="admin-section" id="adminSection">
+      <h3>Generate Access Codes</h3>
+      <label>Code Length:</label>
+      <input type="number" id="codeLength" value="6" min="6" max="8" />
+      <br>
+      <label>Number of Codes:</label>
+      <input type="number" id="codeCount" value="1" min="1" max="10" />
+      <br>
+      <button onclick="generateCodes()">GENERATE CODES</button>
+
+      <div class="code-output" id="codeOutput"></div>
+
+      <div class="instructions">
+        <h3>Instructions:</h3>
+        <ol>
+          <li>Click "GENERATE CODES" to create new access codes</li>
+          <li>Copy the <strong>hash</strong> (not the code itself) from each generated code</li>
+          <li>Add each hash to the <code>validCodes</code> Set in <code>access.html</code> line 94</li>
+          <li>Share only the <strong>CODE</strong> with users (never share the hash)</li>
+          <li>Each code can only be used once</li>
+          <li>Codes are case-insensitive</li>
+        </ol>
+
+        <h3 style="margin-top: 20px;">Example:</h3>
+        <p>If you generate code <code>A7X9K2</code> with hash <code>abc123...</code></p>
+        <p>Add to access.html:</p>
+        <code>"abc123...",</code>
+        <p style="margin-top: 10px;">Give user: <code>A7X9K2</code></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // CHANGE THIS PASSWORD - use a strong password
+    const ADMIN_PASSWORD_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // "admin" - CHANGE THIS!
+
+    async function hashPassword(password) {
+      const msgBuffer = new TextEncoder().encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function login() {
+      const password = document.getElementById('adminPassword').value;
+      const error = document.getElementById('loginError');
+
+      const hash = await hashPassword(password);
+
+      if (hash === ADMIN_PASSWORD_HASH) {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('adminSection').style.display = 'block';
+      } else {
+        error.textContent = 'Invalid password';
+        setTimeout(() => error.textContent = '', 2000);
+      }
+    }
+
+    function generateRandomCode(length) {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excludes similar looking chars (0,O,1,I)
+      let code = '';
+      for (let i = 0; i < length; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+
+    async function generateCodes() {
+      const length = parseInt(document.getElementById('codeLength').value);
+      const count = parseInt(document.getElementById('codeCount').value);
+      const output = document.getElementById('codeOutput');
+
+      let html = '<h3>Generated Codes:</h3>';
+
+      for (let i = 0; i < count; i++) {
+        const code = generateRandomCode(length);
+        const hash = await hashPassword(code);
+
+        html += `
+          <div class="code-item">
+            <div class="code-display">
+              CODE: ${code}
+              <button class="copy-btn" onclick="copyToClipboard('${code}')">COPY CODE</button>
+            </div>
+            <div class="hash-display">
+              HASH: "${hash}",
+              <button class="copy-btn" onclick="copyToClipboard('&quot;${hash}&quot;,')">COPY HASH</button>
+            </div>
+          </div>
+        `;
+      }
+
+      output.innerHTML = html;
+    }
+
+    async function copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        alert('Copied to clipboard!');
+      } catch (err) {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        alert('Copied to clipboard!');
+      }
+    }
+
+    // Allow Enter to login
+    document.getElementById('adminPassword').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') login();
+    });
+  </script>
+</body>
+</html>
