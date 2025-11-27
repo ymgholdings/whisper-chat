@@ -151,6 +151,9 @@
       <label>Number of Codes:</label>
       <input type="number" id="codeCount" value="1" min="1" max="10" />
       <br>
+      <label>Expires In (hours, 0 = never):</label>
+      <input type="number" id="expiresInHours" value="0" min="0" max="168" />
+      <br>
       <button onclick="generateCodes()">GENERATE CODES</button>
 
       <div class="code-output" id="codeOutput"></div>
@@ -158,26 +161,34 @@
       <div class="instructions">
         <h3>Instructions:</h3>
         <ol>
-          <li>Click "GENERATE CODES" to create new access codes</li>
-          <li>Copy the <strong>hash</strong> (not the code itself) from each generated code</li>
-          <li>Add each hash to the <code>validCodes</code> Set in <code>access.html</code> line 94</li>
-          <li>Share only the <strong>CODE</strong> with users (never share the hash)</li>
+          <li>Set code length (6-8 characters) and expiration time</li>
+          <li>Click "GENERATE CODES" - codes are automatically added to server</li>
+          <li>Share the <strong>CODE</strong> with users (copy button provided)</li>
           <li>Each code can only be used once</li>
           <li>Codes are case-insensitive</li>
+          <li>No manual file updates required!</li>
         </ol>
 
-        <h3 style="margin-top: 20px;">Example:</h3>
-        <p>If you generate code <code>A7X9K2</code> with hash <code>abc123...</code></p>
-        <p>Add to access.html:</p>
-        <code>"abc123...",</code>
-        <p style="margin-top: 10px;">Give user: <code>A7X9K2</code></p>
+        <h3 style="margin-top: 20px;">Features:</h3>
+        <ul>
+          <li><strong>Server-side validation:</strong> Codes are stored securely on Deno server</li>
+          <li><strong>Single-use:</strong> Automatically invalidated after first use</li>
+          <li><strong>Time-limited:</strong> Optional expiration (0 = never expires)</li>
+          <li><strong>Zero attack surface:</strong> No client-side secrets</li>
+        </ul>
       </div>
     </div>
   </div>
 
   <script>
+    // Auth server URL
+    const AUTH_SERVER = 'https://whisper-signaling-20.ymgholdings.deno.net';
+
     // CHANGE THIS PASSWORD - use a strong password
     const ADMIN_PASSWORD_HASH = 'b5672e2a8605c7cdb48041581767fbe5678cef5faec7b31c0718eec18620613b'; // Custom secure password
+
+    // Store password after login (needed for API calls)
+    let adminPassword = '';
 
     async function hashPassword(password) {
       const msgBuffer = new TextEncoder().encode(password);
@@ -193,6 +204,7 @@
       const hash = await hashPassword(password);
 
       if (hash === ADMIN_PASSWORD_HASH) {
+        adminPassword = password; // Store for API calls
         document.getElementById('loginSection').style.display = 'none';
         document.getElementById('adminSection').style.display = 'block';
       } else {
@@ -213,26 +225,80 @@
     async function generateCodes() {
       const length = parseInt(document.getElementById('codeLength').value);
       const count = parseInt(document.getElementById('codeCount').value);
+      const expiresInHours = parseInt(document.getElementById('expiresInHours').value);
       const output = document.getElementById('codeOutput');
 
       let html = '<h3>Generated Codes:</h3>';
+      let successCount = 0;
+      let failCount = 0;
 
       for (let i = 0; i < count; i++) {
         const code = generateRandomCode(length);
-        const hash = await hashPassword(code);
 
-        html += `
-          <div class="code-item">
-            <div class="code-display">
-              CODE: ${code}
-              <button class="copy-btn" onclick="copyToClipboard('${code}')">COPY CODE</button>
+        try {
+          // Submit code to server
+          const response = await fetch(`${AUTH_SERVER}/auth/add-code`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              password: adminPassword,
+              code: code,
+              expiresInHours: expiresInHours || null
+            })
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            successCount++;
+            const expiryText = result.expiresAt
+              ? `Expires: ${new Date(result.expiresAt).toLocaleString()}`
+              : 'Never expires';
+
+            html += `
+              <div class="code-item">
+                <div class="code-display">
+                  CODE: ${code}
+                  <button class="copy-btn" onclick="copyToClipboard('${code}')">COPY CODE</button>
+                </div>
+                <div class="hash-display" style="color: #0ff;">
+                  ✓ Added to server • ${expiryText}
+                </div>
+              </div>
+            `;
+          } else {
+            failCount++;
+            html += `
+              <div class="code-item">
+                <div class="code-display">
+                  CODE: ${code}
+                </div>
+                <div class="hash-display" style="color: #f00;">
+                  ✗ Failed: ${result.error}
+                </div>
+              </div>
+            `;
+          }
+        } catch (e) {
+          failCount++;
+          html += `
+            <div class="code-item">
+              <div class="code-display">
+                CODE: ${code}
+              </div>
+              <div class="hash-display" style="color: #f00;">
+                ✗ Connection error
+              </div>
             </div>
-            <div class="hash-display">
-              HASH: "${hash}",
-              <button class="copy-btn" onclick="copyToClipboard('&quot;${hash}&quot;,')">COPY HASH</button>
-            </div>
-          </div>
-        `;
+          `;
+        }
+      }
+
+      html += `<div class="success" style="margin-top: 20px;">✓ ${successCount} codes added successfully</div>`;
+      if (failCount > 0) {
+        html += `<div class="error">✗ ${failCount} codes failed</div>`;
       }
 
       output.innerHTML = html;
