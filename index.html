@@ -928,6 +928,11 @@
 </div>
 
 <script>
+  // Access control - check for valid access token
+  if (sessionStorage.getItem('wh15p3r_access') !== 'granted') {
+    window.location.href = 'access.html';
+  }
+
   // Configuration
   const SIGNALING_SERVER = 'wss://whisper-signaling-20.ymgholdings.deno.net';
 
