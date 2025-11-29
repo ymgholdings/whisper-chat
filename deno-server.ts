@@ -21,6 +21,17 @@ const sessions = new Map<string, {
 // Admin secret for managing codes (set via environment variable)
 const ADMIN_SECRET = Deno.env.get('ADMIN_SECRET') || 'change-this-secret-in-production';
 
+// Admin password hash for /auth/add-code endpoint (matches admin.html)
+const ADMIN_PASSWORD_HASH = Deno.env.get('ADMIN_PASSWORD_HASH') || 'b5672e2a8605c7cdb48041581767fbe5678cef5faec7b31c0718eec18620613b';
+
+// Helper function to hash password
+async function hashPassword(password: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // Cleanup old sessions every 5 minutes
 setInterval(() => {
   const now = Date.now();
@@ -123,6 +134,83 @@ async function handleRequest(req: Request): Promise<Response> {
     } catch (e) {
       return new Response(JSON.stringify({
         valid: false,
+        error: 'Server error'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  // Add access code (used by admin.html)
+  if (url.pathname === '/auth/add-code' && req.method === 'POST') {
+    try {
+      const body = await req.json();
+      const { password, code, expiresInHours } = body;
+
+      // Validate password
+      const passwordHash = await hashPassword(password);
+      if (passwordHash !== ADMIN_PASSWORD_HASH) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Unauthorized'
+        }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Validate code
+      if (!code || typeof code !== 'string' || code.length < 6) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Invalid code format'
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      const upperCode = code.toUpperCase();
+
+      // Check if code already exists
+      if (ACCESS_CODES.has(upperCode)) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Code already exists'
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Calculate expiration
+      const expiresAt = expiresInHours && expiresInHours > 0
+        ? Date.now() + (expiresInHours * 60 * 60 * 1000)
+        : null;
+
+      // Add code
+      ACCESS_CODES.set(upperCode, {
+        code: upperCode,
+        created: Date.now(),
+        usedCount: 0,
+        maxUses: 1, // Single use by default
+        expiresAt
+      });
+
+      console.log(`Code added: ${upperCode}, expires: ${expiresAt ? new Date(expiresAt).toISOString() : 'never'}`);
+
+      return new Response(JSON.stringify({
+        success: true,
+        code: upperCode,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+
+    } catch (e) {
+      return new Response(JSON.stringify({
+        success: false,
         error: 'Server error'
       }), {
         status: 500,
