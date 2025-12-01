@@ -1,11 +1,11 @@
 // WH15P3R Signaling Server for Deno Deploy
 // Serverless WebSocket signaling for WebRTC P2P connections + Access Control
-// Zero logging, ephemeral sessions, no persistence
+// Zero logging • Persistent access codes via Deno KV • Ephemeral sessions
 
-// In-memory access codes (ephemeral - resets on deployment)
-const ACCESS_CODES = new Map();
+// Open Deno KV database (distributed across all isolates)
+const kv = await Deno.openKv();
 
-// WebSocket sessions for signaling
+// WebSocket sessions for signaling (ephemeral, in-memory is fine for sessions)
 const sessions = new Map();
 
 // Admin password hash for /auth/add-code endpoint
@@ -29,6 +29,19 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000);
 
+// Cleanup expired codes from KV every 10 minutes
+setInterval(async () => {
+  const now = Date.now();
+  const entries = kv.list({ prefix: ["access_codes"] });
+  for await (const entry of entries) {
+    const code = entry.value;
+    if (code.expiresAt && now > code.expiresAt) {
+      await kv.delete(entry.key);
+      console.log(`Cleaned up expired code: ${code.code}`);
+    }
+  }
+}, 10 * 60 * 1000);
+
 Deno.serve({ port: 8000 }, async (req) => {
   const url = new URL(req.url);
 
@@ -46,12 +59,25 @@ Deno.serve({ port: 8000 }, async (req) => {
 
   // Health check endpoint
   if (url.pathname === "/health") {
+    // Count active codes in KV
+    let activeCodesCount = 0;
+    const entries = kv.list({ prefix: ["access_codes"] });
+    for await (const entry of entries) {
+      const code = entry.value;
+      if (!code.expiresAt || Date.now() < code.expiresAt) {
+        if (code.usedCount < code.maxUses) {
+          activeCodesCount++;
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({
         status: "ok",
         sessions: sessions.size,
-        activeCodes: ACCESS_CODES.size,
-        uptime: "serverless"
+        activeCodes: activeCodesCount,
+        uptime: "serverless",
+        storage: "deno-kv"
       }),
       {
         status: 200,
@@ -76,7 +102,9 @@ Deno.serve({ port: 8000 }, async (req) => {
         });
       }
 
-      const accessCode = ACCESS_CODES.get(code.toUpperCase());
+      const upperCode = code.toUpperCase();
+      const result = await kv.get(["access_codes", upperCode]);
+      const accessCode = result.value;
 
       if (!accessCode) {
         return new Response(JSON.stringify({
@@ -90,6 +118,7 @@ Deno.serve({ port: 8000 }, async (req) => {
 
       // Check expiration
       if (accessCode.expiresAt && Date.now() > accessCode.expiresAt) {
+        await kv.delete(["access_codes", upperCode]);
         return new Response(JSON.stringify({
           valid: false,
           error: 'Code expired'
@@ -101,6 +130,7 @@ Deno.serve({ port: 8000 }, async (req) => {
 
       // Check max uses
       if (accessCode.usedCount >= accessCode.maxUses) {
+        await kv.delete(["access_codes", upperCode]);
         return new Response(JSON.stringify({
           valid: false,
           error: 'Code limit reached'
@@ -110,8 +140,14 @@ Deno.serve({ port: 8000 }, async (req) => {
         });
       }
 
-      // Increment usage count
+      // Increment usage count and update in KV
       accessCode.usedCount++;
+      await kv.set(["access_codes", upperCode], accessCode);
+
+      // If code is now fully used, delete it
+      if (accessCode.usedCount >= accessCode.maxUses) {
+        await kv.delete(["access_codes", upperCode]);
+      }
 
       return new Response(JSON.stringify({
         valid: true,
@@ -121,6 +157,7 @@ Deno.serve({ port: 8000 }, async (req) => {
       });
 
     } catch (e) {
+      console.error("Validation error:", e);
       return new Response(JSON.stringify({
         valid: false,
         error: 'Server error'
@@ -162,8 +199,9 @@ Deno.serve({ port: 8000 }, async (req) => {
 
       const upperCode = code.toUpperCase();
 
-      // Check if code already exists
-      if (ACCESS_CODES.has(upperCode)) {
+      // Check if code already exists in KV
+      const existing = await kv.get(["access_codes", upperCode]);
+      if (existing.value) {
         return new Response(JSON.stringify({
           success: false,
           error: 'Code already exists'
@@ -178,16 +216,18 @@ Deno.serve({ port: 8000 }, async (req) => {
         ? Date.now() + (expiresInHours * 60 * 60 * 1000)
         : null;
 
-      // Add code
-      ACCESS_CODES.set(upperCode, {
+      // Add code to KV
+      const codeData = {
         code: upperCode,
         created: Date.now(),
         usedCount: 0,
         maxUses: 1, // Single use by default
         expiresAt
-      });
+      };
 
-      console.log(`Code added: ${upperCode}, expires: ${expiresAt ? new Date(expiresAt).toISOString() : 'never'}`);
+      await kv.set(["access_codes", upperCode], codeData);
+
+      console.log(`Code added to KV: ${upperCode}, expires: ${expiresAt ? new Date(expiresAt).toISOString() : 'never'}`);
 
       return new Response(JSON.stringify({
         success: true,
@@ -198,6 +238,7 @@ Deno.serve({ port: 8000 }, async (req) => {
       });
 
     } catch (e) {
+      console.error("Add code error:", e);
       return new Response(JSON.stringify({
         success: false,
         error: 'Server error'
@@ -261,7 +302,7 @@ Deno.serve({ port: 8000 }, async (req) => {
 
   // Root endpoint
   return new Response(
-    "WH15P3R Signaling Server - Running on Deno Deploy\nNo logging • Ephemeral sessions • Post-quantum ready\nAccess control enabled",
+    "WH15P3R Signaling Server - Running on Deno Deploy\nNo logging • Ephemeral sessions • Post-quantum ready\nAccess control: Deno KV persistent storage",
     {
       status: 200,
       headers: {
@@ -335,5 +376,5 @@ function safeSend(socket, message) {
 }
 
 console.log("WH15P3R Signaling Server started on Deno Deploy");
-console.log("Access control enabled");
+console.log("Access control: Deno KV persistent storage enabled");
 console.log(`Admin password: ${ADMIN_PASSWORD_HASH === 'b5672e2a8605c7cdb48041581767fbe5678cef5faec7b31c0718eec18620613b' ? 'Using default' : 'Custom set'}`);
