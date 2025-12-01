@@ -146,7 +146,7 @@
     <div class="admin-section" id="adminSection">
       <h3>Generate Access Codes</h3>
       <label>Code Length:</label>
-      <input type="number" id="codeLength" value="6" min="6" max="8" />
+      <input type="number" id="codeLength" value="8" min="8" max="12" />
       <br>
       <label>Number of Codes:</label>
       <input type="number" id="codeCount" value="1" min="1" max="10" />
@@ -161,20 +161,21 @@
       <div class="instructions">
         <h3>Instructions:</h3>
         <ol>
-          <li>Set code length (6-8 characters) and expiration time</li>
-          <li>Click "GENERATE CODES" - codes are automatically added to server</li>
+          <li>Set code length (8-12 characters recommended) and expiration time</li>
+          <li>Click "GENERATE CODES" - server generates cryptographically secure codes</li>
           <li>Share the <strong>CODE</strong> with users (copy button provided)</li>
           <li>Each code can only be used once</li>
           <li>Codes are case-insensitive</li>
-          <li>No manual file updates required!</li>
+          <li>Minimum 8 characters enforced for security</li>
         </ol>
 
-        <h3 style="margin-top: 20px;">Features:</h3>
+        <h3 style="margin-top: 20px;">Security Features:</h3>
         <ul>
-          <li><strong>Server-side validation:</strong> Codes are stored securely on Deno server</li>
-          <li><strong>Single-use:</strong> Automatically invalidated after first use</li>
+          <li><strong>Cryptographic generation:</strong> Uses crypto.getRandomValues() on server</li>
+          <li><strong>One-time use:</strong> Automatically deleted after validation</li>
+          <li><strong>Rate limiting:</strong> Max 5 validation attempts per IP per hour</li>
           <li><strong>Time-limited:</strong> Optional expiration (0 = never expires)</li>
-          <li><strong>Zero attack surface:</strong> No client-side secrets</li>
+          <li><strong>Admin-only:</strong> Password-protected generation</li>
         </ul>
       </div>
     </div>
@@ -213,38 +214,27 @@
       }
     }
 
-    function generateRandomCode(length) {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excludes similar looking chars (0,O,1,I)
-      let code = '';
-      for (let i = 0; i < length; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return code;
-    }
-
     async function generateCodes() {
       const length = parseInt(document.getElementById('codeLength').value);
       const count = parseInt(document.getElementById('codeCount').value);
       const expiresInHours = parseInt(document.getElementById('expiresInHours').value);
       const output = document.getElementById('codeOutput');
 
-      let html = '<h3>Generated Codes:</h3>';
+      let html = '<h3>Generated Codes (Cryptographically Secure):</h3>';
       let successCount = 0;
       let failCount = 0;
 
       for (let i = 0; i < count; i++) {
-        const code = generateRandomCode(length);
-
         try {
-          // Submit code to server
-          const response = await fetch(`${AUTH_SERVER}/auth/add-code`, {
+          // Request server-side secure code generation
+          const response = await fetch(`${AUTH_SERVER}/auth/generate-code`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
               password: adminPassword,
-              code: code,
+              length: length,
               expiresInHours: expiresInHours || null
             })
           });
@@ -260,11 +250,11 @@
             html += `
               <div class="code-item">
                 <div class="code-display">
-                  CODE: ${code}
-                  <button class="copy-btn" onclick="copyToClipboard('${code}')">COPY CODE</button>
+                  CODE: ${result.code}
+                  <button class="copy-btn" onclick="copyToClipboard('${result.code}')">COPY CODE</button>
                 </div>
                 <div class="hash-display" style="color: #0ff;">
-                  ✓ Added to server • ${expiryText}
+                  ✓ Server generated (crypto-secure) • ${expiryText} • ${result.length} chars
                 </div>
               </div>
             `;
@@ -273,7 +263,7 @@
             html += `
               <div class="code-item">
                 <div class="code-display">
-                  CODE: ${code}
+                  CODE: GENERATION FAILED
                 </div>
                 <div class="hash-display" style="color: #f00;">
                   ✗ Failed: ${result.error}
@@ -286,7 +276,7 @@
           html += `
             <div class="code-item">
               <div class="code-display">
-                CODE: ${code}
+                CODE: CONNECTION ERROR
               </div>
               <div class="hash-display" style="color: #f00;">
                 ✗ Connection error
@@ -296,7 +286,7 @@
         }
       }
 
-      html += `<div class="success" style="margin-top: 20px;">✓ ${successCount} codes added successfully</div>`;
+      html += `<div class="success" style="margin-top: 20px;">✓ ${successCount} codes generated successfully</div>`;
       if (failCount > 0) {
         html += `<div class="error">✗ ${failCount} codes failed</div>`;
       }
