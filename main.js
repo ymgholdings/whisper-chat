@@ -8,8 +8,16 @@ const kv = await Deno.openKv();
 // WebSocket sessions for signaling (ephemeral, in-memory is fine for sessions)
 const sessions = new Map();
 
+// Rate limiting: Track validation attempts per IP
+const validationAttempts = new Map();
+
 // Admin password hash for /auth/add-code endpoint
 const ADMIN_PASSWORD_HASH = Deno.env.get('ADMIN_PASSWORD_HASH') || 'b5672e2a8605c7cdb48041581767fbe5678cef5faec7b31c0718eec18620613b';
+
+// Security constants
+const MIN_CODE_LENGTH = 8; // Minimum 8 characters for security
+const MAX_VALIDATION_ATTEMPTS = 5; // Max attempts per IP per hour
+const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour
 
 // Helper function to hash password
 async function hashPassword(password) {
@@ -17,6 +25,75 @@ async function hashPassword(password) {
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Cryptographically secure code generation
+function generateSecureCode(length) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excludes ambiguous chars
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+
+  let code = '';
+  for (let i = 0; i < length; i++) {
+    code += chars[array[i] % chars.length];
+  }
+  return code;
+}
+
+// Get client IP address
+function getClientIP(req) {
+  return req.headers.get('cf-connecting-ip') ||
+         req.headers.get('x-forwarded-for')?.split(',')[0] ||
+         req.headers.get('x-real-ip') ||
+         'unknown';
+}
+
+// Check rate limit for validation attempts
+async function checkRateLimit(ip) {
+  const now = Date.now();
+
+  // Get attempts from KV
+  const result = await kv.get(["rate_limit", ip]);
+  const attempts = result.value || { count: 0, firstAttempt: now };
+
+  // Reset if outside time window
+  if (now - attempts.firstAttempt > RATE_LIMIT_WINDOW) {
+    return { allowed: true, remaining: MAX_VALIDATION_ATTEMPTS };
+  }
+
+  // Check if limit exceeded
+  if (attempts.count >= MAX_VALIDATION_ATTEMPTS) {
+    const resetTime = attempts.firstAttempt + RATE_LIMIT_WINDOW;
+    const minutesRemaining = Math.ceil((resetTime - now) / 60000);
+    return {
+      allowed: false,
+      remaining: 0,
+      resetInMinutes: minutesRemaining
+    };
+  }
+
+  return {
+    allowed: true,
+    remaining: MAX_VALIDATION_ATTEMPTS - attempts.count
+  };
+}
+
+// Increment rate limit counter
+async function incrementRateLimit(ip) {
+  const now = Date.now();
+  const result = await kv.get(["rate_limit", ip]);
+  const attempts = result.value || { count: 0, firstAttempt: now };
+
+  // Reset if outside time window
+  if (now - attempts.firstAttempt > RATE_LIMIT_WINDOW) {
+    attempts.count = 1;
+    attempts.firstAttempt = now;
+  } else {
+    attempts.count++;
+  }
+
+  // Store with 2-hour expiration
+  await kv.set(["rate_limit", ip], attempts, { expireIn: 2 * 60 * 60 * 1000 });
 }
 
 // Cleanup old sessions every 5 minutes
@@ -77,7 +154,8 @@ Deno.serve({ port: 8000 }, async (req) => {
         sessions: sessions.size,
         activeCodes: activeCodesCount,
         uptime: "serverless",
-        storage: "deno-kv"
+        storage: "deno-kv",
+        security: "crypto-secure"
       }),
       {
         status: 200,
@@ -86,13 +164,28 @@ Deno.serve({ port: 8000 }, async (req) => {
     );
   }
 
-  // Validate access code
+  // Validate access code (with rate limiting)
   if (url.pathname === '/auth/validate' && req.method === 'POST') {
     try {
+      const clientIP = getClientIP(req);
+
+      // Check rate limit
+      const rateLimit = await checkRateLimit(clientIP);
+      if (!rateLimit.allowed) {
+        return new Response(JSON.stringify({
+          valid: false,
+          error: `Too many attempts. Try again in ${rateLimit.resetInMinutes} minutes`
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
       const body = await req.json();
       const { code } = body;
 
       if (!code || typeof code !== 'string') {
+        await incrementRateLimit(clientIP);
         return new Response(JSON.stringify({
           valid: false,
           error: 'Invalid code format'
@@ -107,6 +200,7 @@ Deno.serve({ port: 8000 }, async (req) => {
       const accessCode = result.value;
 
       if (!accessCode) {
+        await incrementRateLimit(clientIP);
         return new Response(JSON.stringify({
           valid: false,
           error: 'Invalid code'
@@ -119,6 +213,7 @@ Deno.serve({ port: 8000 }, async (req) => {
       // Check expiration
       if (accessCode.expiresAt && Date.now() > accessCode.expiresAt) {
         await kv.delete(["access_codes", upperCode]);
+        await incrementRateLimit(clientIP);
         return new Response(JSON.stringify({
           valid: false,
           error: 'Code expired'
@@ -131,23 +226,30 @@ Deno.serve({ port: 8000 }, async (req) => {
       // Check max uses
       if (accessCode.usedCount >= accessCode.maxUses) {
         await kv.delete(["access_codes", upperCode]);
+        await incrementRateLimit(clientIP);
         return new Response(JSON.stringify({
           valid: false,
-          error: 'Code limit reached'
+          error: 'Code already used'
         }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
 
+      // SUCCESS - Valid code
       // Increment usage count and update in KV
       accessCode.usedCount++;
-      await kv.set(["access_codes", upperCode], accessCode);
+      accessCode.usedBy = clientIP;
+      accessCode.usedAt = Date.now();
 
-      // If code is now fully used, delete it
+      // If code is now fully used, delete it (one-time use)
       if (accessCode.usedCount >= accessCode.maxUses) {
         await kv.delete(["access_codes", upperCode]);
+      } else {
+        await kv.set(["access_codes", upperCode], accessCode);
       }
+
+      console.log(`Code validated: ${upperCode} by ${clientIP}`);
 
       return new Response(JSON.stringify({
         valid: true,
@@ -168,7 +270,91 @@ Deno.serve({ port: 8000 }, async (req) => {
     }
   }
 
-  // Add access code (used by admin.html)
+  // Generate secure access code (server-side, admin only)
+  if (url.pathname === '/auth/generate-code' && req.method === 'POST') {
+    try {
+      const body = await req.json();
+      const { password, length = 8, expiresInHours } = body;
+
+      // Validate password
+      const passwordHash = await hashPassword(password);
+      if (passwordHash !== ADMIN_PASSWORD_HASH) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Unauthorized'
+        }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Enforce minimum length
+      const codeLength = Math.max(length, MIN_CODE_LENGTH);
+
+      // Generate cryptographically secure code
+      let code;
+      let attempts = 0;
+      const maxAttempts = 10;
+
+      // Ensure code is unique
+      do {
+        code = generateSecureCode(codeLength);
+        const existing = await kv.get(["access_codes", code]);
+        if (!existing.value) break;
+        attempts++;
+      } while (attempts < maxAttempts);
+
+      if (attempts >= maxAttempts) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Unable to generate unique code'
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Calculate expiration
+      const expiresAt = expiresInHours && expiresInHours > 0
+        ? Date.now() + (expiresInHours * 60 * 60 * 1000)
+        : null;
+
+      // Add code to KV
+      const codeData = {
+        code,
+        created: Date.now(),
+        usedCount: 0,
+        maxUses: 1, // One-time use
+        expiresAt,
+        generatedBy: 'server'
+      };
+
+      await kv.set(["access_codes", code], codeData);
+
+      console.log(`Secure code generated: ${code}, expires: ${expiresAt ? new Date(expiresAt).toISOString() : 'never'}`);
+
+      return new Response(JSON.stringify({
+        success: true,
+        code,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+        length: codeLength
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+
+    } catch (e) {
+      console.error("Generate code error:", e);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Server error'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+  }
+
+  // Legacy endpoint: Add access code (deprecated - use /auth/generate-code instead)
   if (url.pathname === '/auth/add-code' && req.method === 'POST') {
     try {
       const body = await req.json();
@@ -186,11 +372,11 @@ Deno.serve({ port: 8000 }, async (req) => {
         });
       }
 
-      // Validate code
-      if (!code || typeof code !== 'string' || code.length < 6) {
+      // Enforce minimum length
+      if (!code || typeof code !== 'string' || code.length < MIN_CODE_LENGTH) {
         return new Response(JSON.stringify({
           success: false,
-          error: 'Invalid code format'
+          error: `Code must be at least ${MIN_CODE_LENGTH} characters`
         }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -221,7 +407,7 @@ Deno.serve({ port: 8000 }, async (req) => {
         code: upperCode,
         created: Date.now(),
         usedCount: 0,
-        maxUses: 1, // Single use by default
+        maxUses: 1, // One-time use
         expiresAt
       };
 
@@ -302,7 +488,7 @@ Deno.serve({ port: 8000 }, async (req) => {
 
   // Root endpoint
   return new Response(
-    "WH15P3R Signaling Server - Running on Deno Deploy\nNo logging • Ephemeral sessions • Post-quantum ready\nAccess control: Deno KV persistent storage",
+    "WH15P3R Signaling Server - Running on Deno Deploy\nNo logging • Ephemeral sessions • Post-quantum ready\nAccess control: Deno KV • Cryptographic code generation • Rate limited",
     {
       status: 200,
       headers: {
@@ -376,5 +562,5 @@ function safeSend(socket, message) {
 }
 
 console.log("WH15P3R Signaling Server started on Deno Deploy");
-console.log("Access control: Deno KV persistent storage enabled");
+console.log("Security: Cryptographic code generation + Rate limiting");
 console.log(`Admin password: ${ADMIN_PASSWORD_HASH === 'b5672e2a8605c7cdb48041581767fbe5678cef5faec7b31c0718eec18620613b' ? 'Using default' : 'Custom set'}`);
