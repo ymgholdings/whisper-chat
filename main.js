@@ -114,7 +114,7 @@ setInterval(async () => {
     const code = entry.value;
     if (code.expiresAt && now > code.expiresAt) {
       await kv.delete(entry.key);
-      console.log(`Cleaned up expired code: ${code.code}`);
+      // Cleanup completed - no sensitive data logged
     }
   }
 }, 10 * 60 * 1000);
@@ -249,7 +249,7 @@ Deno.serve({ port: 8000 }, async (req) => {
         await kv.set(["access_codes", upperCode], accessCode);
       }
 
-      console.log(`Code validated: ${upperCode} by ${clientIP}`);
+      // Success - no logging of sensitive data
 
       return new Response(JSON.stringify({
         valid: true,
@@ -331,7 +331,7 @@ Deno.serve({ port: 8000 }, async (req) => {
 
       await kv.set(["access_codes", code], codeData);
 
-      console.log(`Secure code generated: ${code}, expires: ${expiresAt ? new Date(expiresAt).toISOString() : 'never'}`);
+      // Success - no logging of sensitive data
 
       return new Response(JSON.stringify({
         success: true,
@@ -413,7 +413,7 @@ Deno.serve({ port: 8000 }, async (req) => {
 
       await kv.set(["access_codes", upperCode], codeData);
 
-      console.log(`Code added to KV: ${upperCode}, expires: ${expiresAt ? new Date(expiresAt).toISOString() : 'never'}`);
+      // Success - no logging of sensitive data
 
       return new Response(JSON.stringify({
         success: true,
