@@ -3,7 +3,7 @@
 // CLI tool to generate WH15P3R access codes
 // Usage: deno run --allow-net --allow-env generate-code.ts [options]
 
-const SERVER_URL = Deno.env.get('WHISPER_SERVER') || 'https://whisper-signaling-20.ymgholdings.deno.net';
+const SERVER_URL = Deno.env.get('WHISPER_SERVER') || 'https://whisper-signaling-20.deno.dev';
 const ADMIN_SECRET = Deno.env.get('ADMIN_SECRET') || 'change-this-secret-in-production';
 
 async function generateCode(maxUses: number = 1, expiresInHours: number | null = null) {
